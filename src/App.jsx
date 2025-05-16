@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { UserStatProvider } from './context/UserStatProvider';
-import { TestProvider } from './context/TestContextProvider';
-import { SettingsProvider } from './context/SettingsProvider';
-
-
+import { UserStatProvider } from './context/UserStatProvider.jsx';
+import { TestProvider } from './context/TestContextProvider.jsx';
+import { SettingsProvider } from './context/SettingProvider.jsx';
+import Compete from './pages/Compete';
+import "./App.css"
 function App() {
   return (
     <SettingsProvider>
@@ -11,11 +11,7 @@ function App() {
         <TestProvider>
           <Router>
             <Routes>
-              {/* <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/leader-board" element={<Leader-board />} />
-              <Route path="/Compete" element={<Compete />} /> */}
+              <Route path="/Compete" element={<Compete />} />
             </Routes>
           </Router>
         </TestProvider>
