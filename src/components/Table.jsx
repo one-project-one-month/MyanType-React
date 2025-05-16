@@ -8,7 +8,7 @@ export default function Table({ columns, data }) {
     });
 
     return (
-        <table className={'text-right w-full'}>
+        <table className={'text-right w-full tracking-wider'}>
             <thead>
                 {
                     table.getHeaderGroups().map(headerGroup => (
@@ -28,12 +28,12 @@ export default function Table({ columns, data }) {
                 {
                     table.getRowModel().rows.map((row, i) => (
                         <tr key={row.id} className={
-                            `${i % 2 === 0 ? 'bg-gray-900' : 'bg-gray-800'}`
+                            `${i % 2 === 0 ? 'bg-gray-900 mb-3.5' : 'bg-gray-800'}`
                         }>
                             {
                                 row.getVisibleCells().map((cell, i) => (
                                     <td key={cell.id} className={`
-                                        text-[15px] font-medium px-3.5 py-4.5
+                                        text-[15px] font-base px-5 py-4.5
                                         ${i === 0 ? 'rounded-l-lg' : ''}
                                         ${i === row.getVisibleCells().length - 1 ? 'rounded-r-lg' : ''}
                                     `}>
