@@ -18,6 +18,8 @@
     "lucide-react": "^0.510.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.0",
+    "styled-components": "^6.1.18",
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.6"
   },
