@@ -12,7 +12,6 @@ function App() {
           <Router>
             <Routes>
               <Route path="/Compete" element={<Compete />} />
-              <Route path="/Home" element={<Home />} />
             </Routes>
           </Router>
         </TestProvider>
