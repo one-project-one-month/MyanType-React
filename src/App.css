@@ -4,13 +4,12 @@ body {
   padding: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden; /* Prevents scrollbars */
-  background-color: #0e0f15; /* Match the form's background */
+  overflow: hidden;
+  background-color: #0e0f15;
 }
 
-/* Optional: Ensure the root element also matches */
 #root {
   width: 100%;
   height: 100%;
-  background-color: #0e0f15; /* Match the form's background */
+  background-color: #0e0f15;
 }
