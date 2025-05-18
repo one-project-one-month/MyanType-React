@@ -4,6 +4,7 @@ import { TestProvider } from './context/TestContextProvider.jsx';
 import { SettingsProvider } from './context/SettingProvider.jsx';
 import Compete from './pages/Compete';
 import "./App.css"
+import { Toaster } from 'sonner';
 function App() {
   return (
     <SettingsProvider>
@@ -13,6 +14,7 @@ function App() {
             <Routes>
               <Route path="/Compete" element={<Compete />} />
             </Routes>
+            <Toaster richColors position="bottom-center" />
           </Router>
         </TestProvider>
       </UserStatProvider>
