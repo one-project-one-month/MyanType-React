@@ -5,6 +5,10 @@ import { SettingsProvider } from './context/SettingProvider.jsx';
 import Compete from './pages/Compete';
 import "./App.css"
 import { Toaster } from 'sonner';
+import RootLayout from "./layout/RootLayout";
+import Login from "./pages/auth/Login.jsx";
+import Register from "./pages/auth/Register.jsx";
+
 function App() {
   return (
     <SettingsProvider>
@@ -12,7 +16,12 @@ function App() {
         <TestProvider>
           <Router>
             <Routes>
-              <Route path="/Compete" element={<Compete />} />
+              <Route path="/" element={<RootLayout />}>
+                <Route path="sign-up" element={<Register />} />
+                <Route path="login" element={<Login />} />
+                <Route index element={<HomePage />} />
+                <Route path="compete" element={<Compete />} />
+              </Route>
             </Routes>
             <Toaster richColors position="bottom-center" />
           </Router>
