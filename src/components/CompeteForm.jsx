@@ -36,6 +36,7 @@ const CompeteForm = () => {
       console.log('Competition invitation sent:', response.data);
       setOpen(false);
       toast.success(`Successfully sent competition invite to ${username}.`, {
+        position: 'top-center', // Explicitly set the position to top-center
         style: {
           backgroundColor: '#141723',
           color: '#F4F4F5',
@@ -50,6 +51,7 @@ const CompeteForm = () => {
       console.error('Error sending competition invitation:', error);
       setOpen(false);
       toast.error('Failed to send competition invite. Please try again.', {
+        position: 'top-center', // Explicitly set the position to top-center
         style: {
           backgroundColor: '#141723',
           color: '#F4F4F5',
@@ -73,7 +75,7 @@ const CompeteForm = () => {
         marginTop: '50px',
         color: '#F4F4F5',
         boxShadow: '0 16px 32px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(244, 244, 245, 0.1)',
-        border: '4px solid #141723', // Fixed: Hardcoded the border color
+        border: '4px solid #141723',
         fontFamily: '"Press Start 2P", monospace',
         position: 'relative',
         overflow: 'hidden',
