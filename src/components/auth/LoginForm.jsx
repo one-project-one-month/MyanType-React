@@ -36,27 +36,31 @@ export function LoginForm() {
 
   return (
     <div className={cn("flex flex-col gap-6")}>
-      <Card>
+      <Card
+        className="bg-[#0E0F15] border-[#0E0F15] "
+        style={{ boxShadow: "0 16px 32px rgba(0, 0, 0, 0.3)" }}
+      >
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl text-white">Login</CardTitle>
+          <CardDescription className="text-white">
             Enter your email below to login to your account
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-white pb-2">Email</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type={"email"}
                         placeholder="example@email.com..."
+                        className="bg-[#141723] py-5 text-white"
                       />
                     </FormControl>
                     <FormMessage />
@@ -68,12 +72,13 @@ export function LoginForm() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-white pb-2">Password</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         placeholder="*********"
                         type={"password"}
+                        className="bg-[#141723] py-5 text-white"
                       />
                     </FormControl>
                     <FormMessage />
@@ -81,20 +86,24 @@ export function LoginForm() {
                 )}
               />
               <div className="space-y-2">
-                <Button type="submit" className="w-full cursor-pointer">
+                <Button
+                  type="submit"
+                  className="w-full cursor-pointer bg-[#141723] hover:bg-[#141723] border-none text-white hover:text-white py-5"
+                  disabled={!form.formState.isDirty}
+                >
                   Login
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full cursor-pointer"
+                  className="w-full cursor-pointer bg-[#141723] hover:bg-[#141723] border-none text-white hover:text-white py-5"
                   type="button"
                 >
                   Login with Google
                 </Button>
               </div>
             </form>
-            <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
+            <div className="mt-4 text-center text-sm text-white">
+              Don&apos;t have an account?{" "}
               <Link to={"/sign-up"} className="underline underline-offset-4">
                 Sign up
               </Link>
