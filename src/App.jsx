@@ -8,6 +8,8 @@ import { Toaster } from 'sonner';
 import RootLayout from "./layout/RootLayout";
 import Login from "./pages/auth/Login.jsx";
 import Register from "./pages/auth/Register.jsx";
+import Challenge from './pages/Challenge';
+import TypingResults from './pages/TypingResults.jsx';
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
                 <Route path="sign-up" element={<Register />} />
                 <Route path="login" element={<Login />} />
                 <Route path="compete" element={<Compete />} />
+                <Route path="/challenge" element={<Challenge />} />
+                <Route path="/results" element={<TypingResults />} />
               </Route>
             </Routes>
             <Toaster richColors position="bottom-center" />
