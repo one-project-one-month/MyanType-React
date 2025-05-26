@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   Card,
@@ -51,10 +51,52 @@ const TypingResults = () => {
     },
   };
 
+  const normalizeResults = (rawResults) => {
+    return {
+      wpm: rawResults.wpm || 0,
+      accuracy: rawResults.accuracy || 0,
+      characters: rawResults.charactersTyped || 0,
+      correctChars: rawResults.correct || 0,
+      incorrectChars: rawResults.incorrect || 0,
+      duration: rawResults.timeTaken || 0,
+      timePerChar: rawResults.timePerChar || {
+        data: [
+          { second: "0", speed: rawResults.wpm || 0 },
+          { second: String(Math.floor(rawResults.timeTaken / 2)), speed: rawResults.wpm || 0 },
+          { second: String(rawResults.timeTaken), speed: rawResults.wpm || 0 },
+        ],
+      },
+    };
+  };
+
   const results =
     location.state && location.state.results
-      ? location.state.results
+      ? normalizeResults(location.state.results)
       : defaultResults;
+
+  // Send all data to localhost:8181 when the component mounts
+  useEffect(() => {
+    if (location.state && location.state.results) {
+      const sendData = async () => {
+        try {
+          const response = await fetch('http://localhost:8181', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(location.state.results), // Send the entire raw results
+          });
+          if (!response.ok) {
+            throw new Error('Failed to send data to localhost:8181');
+          }
+          console.log('Data sent successfully:', await response.json());
+        } catch (error) {
+          console.error('Error sending data:', error);
+        }
+      };
+      sendData();
+    }
+  }, [location.state]);
 
   const getGrade = (wpm) => {
     if (wpm >= 80) return { grade: "A+", icon: <Trophy className="text-yellow-400" /> };
@@ -82,7 +124,6 @@ const TypingResults = () => {
         </h1>
 
         <div className="grid grid-cols-3 gap-6 mb-6">
-          {/* Speed */}
           <Card className="bg-[#141723] border-[#777C90] h-40">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
@@ -96,7 +137,6 @@ const TypingResults = () => {
             </CardContent>
           </Card>
 
-          {/* Accuracy */}
           <Card className="bg-[#141723] border-[#777C90] h-40">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
@@ -110,7 +150,6 @@ const TypingResults = () => {
             </CardContent>
           </Card>
 
-          {/* Grade */}
           <Card className="bg-[#141723] border-[#777C90] h-40">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
@@ -125,9 +164,7 @@ const TypingResults = () => {
           </Card>
         </div>
 
-        {/* Chart and Stats Layout */}
         <div className="grid grid-cols-2 gap-6">
-          {/* Speed Chart */}
           <Card className="bg-[#141723] border-[#777C90] p-6">
             <CardHeader>
               <CardTitle className="text-[#F4F4F5]">Speed over Time</CardTitle>
@@ -145,7 +182,7 @@ const TypingResults = () => {
                     <XAxis
                       dataKey="second"
                       stroke="#777C90"
-                      ticks={["0", "30", "60"]}
+                      ticks={["0", String(Math.floor(results.duration / 2)), String(results.duration)]}
                       label={{
                         value: "Time (seconds)",
                         position: "bottom",
@@ -162,7 +199,7 @@ const TypingResults = () => {
                         fill: "#F4F4F5",
                         offset: 15,
                       }}
-                      domain={[40, 80]}
+                      domain={[Math.max(0, results.wpm - 20), results.wpm + 20]}
                     />
                     <Line
                       type="monotone"
@@ -179,7 +216,6 @@ const TypingResults = () => {
             </CardContent>
           </Card>
 
-          {/* Stats Table */}
           <Card className="bg-[#141723] border-[#777C90]">
             <CardHeader>
               <CardTitle className="text-[#F4F4F5]">Detailed Stats</CardTitle>

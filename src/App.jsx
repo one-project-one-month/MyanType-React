@@ -10,7 +10,7 @@ import Login from "./pages/auth/Login.jsx";
 import Register from "./pages/auth/Register.jsx";
 import Challenge from './pages/Challenge';
 import TypingResults from './pages/TypingResults.jsx';
-
+import TestModeSelector from './pages/TestModeSelector.jsx';
 function App() {
   return (
     <SettingsProvider>
@@ -24,6 +24,7 @@ function App() {
                 <Route path="compete" element={<Compete />} />
                 <Route path="/challenge" element={<Challenge />} />
                 <Route path="/results" element={<TypingResults />} />
+                <Route path="/test" element={<TestModeSelector />} />
               </Route>
             </Routes>
             <Toaster richColors position="bottom-center" />
