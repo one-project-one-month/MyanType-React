@@ -73,30 +73,28 @@ const TypingResults = () => {
     location.state && location.state.results
       ? normalizeResults(location.state.results)
       : defaultResults;
-
-  // Send all data to localhost:8181 when the component mounts
-  useEffect(() => {
-    if (location.state && location.state.results) {
-      const sendData = async () => {
-        try {
-          const response = await fetch('http://localhost:8181', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(location.state.results), // Send the entire raw results
-          });
-          if (!response.ok) {
-            throw new Error('Failed to send data to localhost:8181');
-          }
-          console.log('Data sent successfully:', await response.json());
-        } catch (error) {
-          console.error('Error sending data:', error);
+      useEffect(() => {
+        if (location.state && location.state.results) {
+          const sendData = async () => {
+            try {
+              const response = await fetch('https://myantype-nodejs.onrender.com/api/v1/result', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(location.state.results), // Send the entire raw results
+              });
+              if (!response.ok) {
+                throw new Error('Failed to send data to https://myantype-nodejs.onrender.com/api/v1/result');
+              }
+              console.log('Data sent successfully:', await response.json());
+            } catch (error) {
+              console.error('Error sending data:', error);
+            }
+          };
+          sendData();
         }
-      };
-      sendData();
-    }
-  }, [location.state]);
+      }, [location.state]);
 
   const getGrade = (wpm) => {
     if (wpm >= 80) return { grade: "A+", icon: <Trophy className="text-yellow-400" /> };
