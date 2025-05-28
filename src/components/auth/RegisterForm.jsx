@@ -18,7 +18,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import { authApi } from "../../api/axiosConfig";
 import { registerFormSchema } from "../../utils/authFormSchema";
@@ -26,12 +27,19 @@ import { registerFormSchema } from "../../utils/authFormSchema";
 export function RegisterForm() {
   const form = useForm({
     resolver: zodResolver(registerFormSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { username: "", email: "", password: "" },
   });
+  const navigate = useNavigate();
 
   const onSubmit = async (values) => {
-    const { data } = await authApi.post("/", values);
+    const { data } = await authApi.post("/auth/register", values);
     console.log(data);
+    if (data.success) {
+      toast.success(data.message);
+      navigate("/login");
+    } else {
+      toast.error("something went wrong");
+    }
   };
   return (
     <div className={cn("flex flex-col gap-6")}>
@@ -50,7 +58,7 @@ export function RegisterForm() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="name"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white pb-2">Name</FormLabel>

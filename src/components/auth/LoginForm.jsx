@@ -18,7 +18,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import { authApi } from "../../api/axiosConfig";
 import { loginFormSchema } from "../../utils/authFormSchema";
@@ -28,10 +29,16 @@ export function LoginForm() {
     resolver: zodResolver(loginFormSchema),
     defaultValues: { email: "", password: "" },
   });
+  const navigate = useNavigate();
 
   const onSubmit = async (values) => {
-    const { data } = await authApi.post("/", values);
-    console.log(data);
+    const { data } = await authApi.post("/auth/login", values);
+    if (data.success) {
+      toast.success(data.message);
+      navigate("/");
+    } else {
+      toast.error("something went wrong");
+    }
   };
 
   return (
