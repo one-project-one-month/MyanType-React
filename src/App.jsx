@@ -1,13 +1,41 @@
-import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
-import Leaderboard from "../pages/Leaderboard.jsx";
-import Profile from "../pages/Profile.jsx";
-
-export const queryClient = new QueryClient();
-
-export default function App() {
-    return (
-        <QueryClientProvider client={queryClient} >
-
-        </QueryClientProvider>
-    );
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { UserStatProvider } from './context/UserStatProvider.jsx';
+import { TestProvider } from './context/TestContextProvider.jsx';
+import { SettingsProvider } from './context/SettingProvider.jsx';
+import Compete from './pages/Compete';
+import "./App.css";
+import { Toaster } from 'sonner';
+import RootLayout from "./layout/RootLayout";
+import Login from "./pages/auth/Login.jsx";
+import Register from "./pages/auth/Register.jsx";
+import HomePage from './pages/Home.jsx';
+import Challenge from './pages/Challenge';
+import TypingResults from './pages/TypingResults.jsx';
+import Testing123 from './pages/Testing.jsx'
+import TestModeSelector from './pages/TestModeSelector.jsx';
+function App() {
+  return (
+    <SettingsProvider>
+      <UserStatProvider>
+        <TestProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<HomePage />}>
+                <Route path="sign-up" element={<Register />} />
+                <Route path="login" element={<Login />} />
+                <Route path="compete" element={<Compete />} />
+                <Route path="/challenge" element={<Challenge />} />
+                <Route path="/results" element={<TypingResults />} />
+                <Route path="/test" element={<TestModeSelector />} />
+                <Route path="/testing" element={<Testing123 />} />
+              </Route>
+            </Routes>
+            <Toaster richColors position="bottom-center" />
+          </Router>
+        </TestProvider>
+      </UserStatProvider>
+    </SettingsProvider>
+  );
 }
+
+export default App;
