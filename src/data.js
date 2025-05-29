@@ -30,7 +30,7 @@ export function createRandomLeaderboard(rank) {
 }
 
 export const leaderboards = faker.helpers.multiple(createRandomLeaderboard, {
-    count: 10,
+    count: 50,
 });
 
 export function createRandomHistory() {
@@ -57,16 +57,20 @@ export function createRandomHistory() {
 }
 
 export const histories = faker.helpers.multiple(createRandomHistory, {
-    count: 7
+    count: 10
 });
 
 export const typingStats = [
-    { label: 'Tests started', value: 5 },
     { label: 'Tests completed', value: 4 },
-    { label: 'Time typing', value: '00 : 02: 29' },
 ];
 
 export const typingSpeeds = [
+    { time: 15, wpm: 69, accuracy: 94 },
+    { time: 60, wpm: 59, accuracy: 90 }
+];
+
+export const typingOverview = [
+    { label: 'Tests completed', value: 4 },
     { time: 15, wpm: 69, accuracy: 94 },
     { time: 60, wpm: 59, accuracy: 90 }
 ];

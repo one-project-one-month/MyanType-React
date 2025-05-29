@@ -1,11 +1,13 @@
-import Leaderboard from "@/components/leaderboard/Leaderboard.jsx";
-import Profile from "@/components/profile/Profile.jsx";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import Leaderboard from "../pages/Leaderboard.jsx";
+import Profile from "../pages/Profile.jsx";
+
+export const queryClient = new QueryClient();
 
 export default function App() {
     return (
-        <div className={'pt-4 min-h-screen bg-[#0E0F15]'}>
-            <Leaderboard />
-            <Profile />
-        </div>
+        <QueryClientProvider client={queryClient} >
+
+        </QueryClientProvider>
     );
 }

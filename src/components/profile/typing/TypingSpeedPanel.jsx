@@ -1,4 +1,5 @@
-export default function TypingSpeedPanel({ speeds }) {
+/*
+export default function TypingSpeedPanel({ speeds, stats }) {
     return (
         <div className={'flex gap-12'}>
             {speeds.map((item, i) => (
@@ -10,4 +11,4 @@ export default function TypingSpeedPanel({ speeds }) {
             ))}
         </div>
     );
-}
+}*/

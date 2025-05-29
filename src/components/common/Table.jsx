@@ -21,29 +21,36 @@ export default function Table({ table }) {
                 </thead>
                 <tbody>
                 {
-                    table.getRowModel().rows.map((row, i) => (
-                        <tr key={row.id} className={
-                            `${i % 2 === 0 ? 'bg-[#141723]' : 'bg-[#0E0F15]'}`
-                        }>
-                            {
-                                row.getVisibleCells().map((cell, i) => (
-                                    <td key={cell.id} className={`
+                    table.getRowModel().rows.length === 0 ? (
+                        <tr>
+                            <td colSpan={table.getAllColumns().length} className={'text-center py-8 text-xl text-slate-500'}>No Results Found</td>
+                        </tr>
+                    ) : (
+                        table.getRowModel().rows.map((row, i) => (
+                            <tr key={row.id} className={
+                                `${i % 2 === 0 ? 'bg-[#141723]' : 'bg-[#0E0F15]'}`
+                            }>
+                                {
+                                    row.getVisibleCells().map((cell, i) => (
+                                        <td key={cell.id} className={`
                                     text-[15px] font-base px-4.5 py-4.5
                                     ${i === 0 ? 'rounded-l-lg' : ''}
                                     ${i === row.getVisibleCells().length - 1 ? 'rounded-r-lg' : ''}
                                 `}>
-                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                    </td>
-                                ))
-                            }
-                        </tr>
-                    ))
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </td>
+                                    ))
+                                }
+                            </tr>
+                        ))
+                    )
+
                 }
                 </tbody>
             </table>
             <div className="block tracking-wider sm:hidden">
                 {table.getRowModel().rows.map(row => (
-                    <div key={row.id} className="border border-zinc-700 rounded-lg p-4 mb-2">
+                    <div key={row.id} className="border border-[#3A3A67]/[0.32] rounded-xl p-4 mb-2">
                         {row.getVisibleCells().map(cell => (
                             <div key={cell.id} className="flex justify-between text-sm py-1">
                                 <span className="font-medium text-gray-50">{flexRender(cell.column.columnDef.header, cell.getContext())}</span>

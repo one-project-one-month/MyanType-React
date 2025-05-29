@@ -1,17 +1,14 @@
-import {typingSpeeds, typingStats} from "@/data.js";
+import { typingOverview } from "@/data.js";
 import TypingResults from "@/components/common/TypingResults.jsx";
-import TypingStatsPanel from "@/components/profile/typing/TypingStatsPanel.jsx";
-import TypingSpeedPanel from "@/components/profile/typing/TypingSpeedPanel.jsx";
+import Result from "@/components/profile/typing/Result.jsx";
 
-export default function TypingResultsContainer() {
+export default function TypingOverview() {
     return (
         <div className={'flex flex-col mb-4 gap-4 sm:flex-row sm:gap-3'}>
             <TypingResults className={'gap-12'}>
-                <TypingStatsPanel stats={typingStats} />
+                <Result results={typingOverview} />
             </TypingResults>
-            <TypingResults className={'gap-12'}>
-                <TypingSpeedPanel speeds={typingSpeeds} />
-            </TypingResults>
+
         </div>
     );
 }
