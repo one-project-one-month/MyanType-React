@@ -1,9 +1,9 @@
-import LeaderboardTable from "@/components/Leaderboard.jsx";
+import Leaderboard from "@/components/leaderboard/Leaderboard.jsx";
 
 export default function LeaderboardPage() {
     return (
         <div className={'mx-auto'}>
-            <LeaderboardTable />
+            <Leaderboard />
         </div>
-    )
+    );
 }
