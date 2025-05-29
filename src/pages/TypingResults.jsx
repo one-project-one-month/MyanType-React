@@ -42,6 +42,7 @@ const TypingResults = () => {
     correctChars: 295,
     incorrectChars: 25,
     duration: 60,
+    mode: "words", // default mode
     timePerChar: {
       data: [
         { second: "0", speed: 62 },
@@ -51,6 +52,7 @@ const TypingResults = () => {
     },
   };
 
+  // Updated to normalize 'mode' too!
   const normalizeResults = (rawResults) => {
     return {
       wpm: rawResults.wpm || 0,
@@ -59,6 +61,7 @@ const TypingResults = () => {
       correctChars: rawResults.correct || 0,
       incorrectChars: rawResults.incorrect || 0,
       duration: rawResults.timeTaken || 0,
+      mode: (rawResults.mode && rawResults.mode.toLowerCase()) || "words", // ensure mode is present
       timePerChar: rawResults.timePerChar || {
         data: [
           { second: "0", speed: rawResults.wpm || 0 },
@@ -69,12 +72,13 @@ const TypingResults = () => {
     };
   };
 
-  const results =
-    location.state && location.state.results
-      ? normalizeResults(location.state.results)
-      : defaultResults;
+  // Check if using fallback/default results
+  const usedDefault = !(location.state && location.state.results);
 
-  // Send all data to localhost:8181 when the component mounts
+  // Use provided results if present, otherwise default
+  const results = normalizeResults(location.state?.results ?? defaultResults);
+
+  // Send all result data to localhost:8181 when the component mounts
   useEffect(() => {
     if (location.state && location.state.results) {
       const sendData = async () => {
@@ -116,12 +120,25 @@ const TypingResults = () => {
     },
   };
 
+  // X Axis Title
+  const xAxisLabel =
+    results.mode === "words"
+      ? "Words"
+      : results.mode === "time"
+      ? "Time (seconds)"
+      : "Value";
+
   return (
     <div className="bg-[#0E0F15] min-h-screen overflow-y-auto">
       <div className="max-w-5xl mx-auto w-full py-4 md:py-8 px-4 md:px-8">
         <h1 className="text-3xl font-bold mb-6 text-center text-[#F4F4F5]">
           Typing Test Results
         </h1>
+        {usedDefault && (
+          <div className="text-yellow-400 text-center mb-4">
+            No recent test data found. Showing sample results.
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-6 mb-6">
           <Card className="bg-[#141723] border-[#777C90] h-40">
@@ -167,7 +184,7 @@ const TypingResults = () => {
         <div className="grid grid-cols-2 gap-6">
           <Card className="bg-[#141723] border-[#777C90] p-6">
             <CardHeader>
-              <CardTitle className="text-[#F4F4F5]">Speed over Time</CardTitle>
+              <CardTitle className="text-[#F4F4F5]">Speed over {results.mode === 'words' ? 'Words' : results.mode === 'time' ? 'Time' : 'Test'}</CardTitle>
               <CardDescription className="text-[#777C90]">
                 Your typing speed during the test (WPM)
               </CardDescription>
@@ -184,7 +201,7 @@ const TypingResults = () => {
                       stroke="#777C90"
                       ticks={["0", String(Math.floor(results.duration / 2)), String(results.duration)]}
                       label={{
-                        value: "Time (seconds)",
+                        value: xAxisLabel,
                         position: "bottom",
                         fill: "#F4F4F5",
                         offset: 15,
