@@ -42,7 +42,7 @@ const TypingResults = () => {
     correctChars: 295,
     incorrectChars: 25,
     duration: 60,
-    mode: "words", // default mode
+    mode: "words",
     timePerChar: {
       data: [
         { second: "0", speed: 62 },
@@ -52,7 +52,6 @@ const TypingResults = () => {
     },
   };
 
-  // Updated to normalize 'mode' too!
   const normalizeResults = (rawResults) => {
     return {
       wpm: rawResults.wpm || 0,
@@ -61,7 +60,7 @@ const TypingResults = () => {
       correctChars: rawResults.correct || 0,
       incorrectChars: rawResults.incorrect || 0,
       duration: rawResults.timeTaken || 0,
-      mode: (rawResults.mode && rawResults.mode.toLowerCase()) || "words", // ensure mode is present
+      mode: (rawResults.mode && rawResults.mode.toLowerCase()) || "words",
       timePerChar: rawResults.timePerChar || {
         data: [
           { second: "0", speed: rawResults.wpm || 0 },
@@ -72,13 +71,9 @@ const TypingResults = () => {
     };
   };
 
-  // Check if using fallback/default results
   const usedDefault = !(location.state && location.state.results);
-
-  // Use provided results if present, otherwise default
   const results = normalizeResults(location.state?.results ?? defaultResults);
 
-  // Send all result data to localhost:8181 when the component mounts
   useEffect(() => {
     if (location.state && location.state.results) {
       const sendData = async () => {
@@ -88,7 +83,7 @@ const TypingResults = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(location.state.results), // Send the entire raw results
+            body: JSON.stringify(location.state.results),
           });
           if (!response.ok) {
             throw new Error('Failed to send data to localhost:8181');
@@ -120,13 +115,14 @@ const TypingResults = () => {
     },
   };
 
-  // X Axis Title
   const xAxisLabel =
     results.mode === "words"
       ? "Words"
       : results.mode === "time"
       ? "Time (seconds)"
       : "Value";
+
+  const showChart = results.mode === "words" || results.mode === "time";
 
   return (
     <div className="bg-[#0E0F15] min-h-screen overflow-y-auto">
@@ -140,7 +136,7 @@ const TypingResults = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card className="bg-[#141723] border-[#777C90] h-40">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
@@ -181,63 +177,69 @@ const TypingResults = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <Card className="bg-[#141723] border-[#777C90] p-6">
-            <CardHeader>
-              <CardTitle className="text-[#F4F4F5]">Speed over {results.mode === 'words' ? 'Words' : results.mode === 'time' ? 'Time' : 'Test'}</CardTitle>
-              <CardDescription className="text-[#777C90]">
-                Your typing speed during the test (WPM)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-64 p-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer config={chartConfig}>
-                  <LineChart
-                    data={results.timePerChar.data}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-                  >
-                    <XAxis
-                      dataKey="second"
-                      stroke="#777C90"
-                      ticks={["0", String(Math.floor(results.duration / 2)), String(results.duration)]}
-                      label={{
-                        value: xAxisLabel,
-                        position: "bottom",
-                        fill: "#F4F4F5",
-                        offset: 15,
-                      }}
-                    />
-                    <YAxis
-                      stroke="#777C90"
-                      label={{
-                        value: "WPM",
-                        angle: -90,
-                        position: "insideLeft",
-                        fill: "#F4F4F5",
-                        offset: 15,
-                      }}
-                      domain={[Math.max(0, results.wpm - 20), results.wpm + 20]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="speed"
-                      name="speed"
-                      stroke="#60a5fa"
-                      strokeWidth={2}
-                      dot={true}
-                    />
-                    <Tooltip content={<ChartTooltipContent />} />
-                  </LineChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+        <div className={showChart ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "grid grid-cols-1 gap-6"}>
+          {showChart && (
+            <Card className="bg-[#141723] border-[#777C90] p-6">
+              <CardHeader>
+                <CardTitle className="text-[#F4F4F5]">
+                  Speed over {results.mode === 'words' ? 'Words' : 'Time'}
+                </CardTitle>
+                <CardDescription className="text-[#777C90]">
+                  Your typing speed during the test (WPM)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-64 p-6">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ChartContainer config={chartConfig}>
+                    <LineChart
+                      data={results.timePerChar.data}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+                    >
+                      <XAxis
+                        dataKey="second"
+                        stroke="#777C90"
+                        ticks={["0", String(Math.floor(results.duration / 2)), String(results.duration)]}
+                        label={{
+                          value: xAxisLabel,
+                          position: "bottom",
+                          fill: "#F4F4F5",
+                          offset: 15,
+                        }}
+                      />
+                      <YAxis
+                        stroke="#777C90"
+                        label={{
+                          value: "WPM",
+                          angle: -90,
+                          position: "insideLeft",
+                          fill: "#F4F4F5",
+                          offset: 15,
+                        }}
+                        domain={[Math.max(0, results.wpm - 20), results.wpm + 20]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="speed"
+                        name="speed"
+                        stroke="#60a5fa"
+                        strokeWidth={2}
+                        dot={true}
+                      />
+                      <Tooltip content={<ChartTooltipContent />} />
+                    </LineChart>
+                  </ChartContainer>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="bg-[#141723] border-[#777C90]">
             <CardHeader>
-              <CardTitle className="text-[#F4F4F5]">Detailed Stats</CardTitle>
+              <CardTitle className="text-[#F4F4F5]">
+                Detailed Stats {results.mode === 'custom' ? '(Custom)' : results.mode === 'quote' ? '(Quote)' : ''}
+              </CardTitle>
               <CardDescription className="text-[#777C90]">
-                Complete breakdown of your performance
+                Complete breakdown of your {results.mode} test performance
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import TestModeSelector from './TestModeSelector';
+import Keyboard from './KeyBoard';
 
-const TypingArea = ({ onKeyPress }) => {
+const TypingArea = () => {
   const [inputText, setInputText] = useState('');
   const [mode, setMode] = useState('words');
   const [option, setOption] = useState(30);
@@ -17,6 +18,8 @@ const TypingArea = ({ onKeyPress }) => {
   const [wpm, setWpm] = useState(0);
   const [startTime, setStartTime] = useState(null);
   const [results, setResults] = useState(null);
+  const [shiftActive, setShiftActive] = useState(false);
+  const [activeKey, setActiveKey] = useState('');
 
   const location = useLocation();
   const inputDivRef = useRef(null);
@@ -46,7 +49,7 @@ const TypingArea = ({ onKeyPress }) => {
         'မြေကြီး', 'လှည့်ပတ်', 'အရောင်', 'မှိန်ဖျော့', 'ဂီတ', 'ဖွင့်', 'နှလုံး', 'ခုန်', 'ပျော်ရွှင်', 'ပျံ့နှံ့',
         'အေးချမ်းသာယာ', 'စိတ်', 'တွေးခေါ်', 'လက်', 'တည်ဆောက်', 'ခြေ', 'ပြေး', 'မျက်လုံး', 'မြင်', 'နား',
         'ကြား', 'အသံ', 'ပြော', 'စကားလုံး', 'ချိတ်ဆက်', 'အကြံ', 'ဖြစ်ပေါ်', 'အနာဂတ်', 'စောင့်ဆိုင်း',
-        'အတိတ်', 'သင်ကြား', 'ပစ္စုပ္ပန်', 'အရေးကြီး', 'အပြုံး', 'ပျောက်ကင်း', 'ခရီး', 'စတင်', 'အဆုံး', 'ရောက်ရှိ',
+        'အတိတ်', 'သင်ကြား', 'ပစ္စုပ္ပန်', 'အရေးကြီး', 'အပြုံး', 'ပျောက်�ကင်း', 'ခရီး', 'စတင်', 'အဆုံး', 'ရောက်ရှိ',
         'အောင်မြင်', 'ရည်မှန်း', 'အားထုတ်', 'ယုံကြည်', 'စွမ်းအား', 'ပြည့်စုံ', 'သဘာဝ', 'လှပ', 'အသက်', 'ရှင်သန်'
       ],
       quote: 'အောင်မြင်ရန် တစ်ခုတည်းသောနည်းလမ်းမှာ သင်လုပ်သည်ကို ချစ်ခြင်းဖြစ်သည်။'
@@ -60,7 +63,7 @@ const TypingArea = ({ onKeyPress }) => {
     if (mode === 'quote') {
       setSampleText(data.quote);
     } else if (mode === 'custom') {
-      setSampleText(data.words.join(' '));
+      setSampleText('');
     } else {
       const wordCount = mode === 'words' ? option : 100;
       setSampleText(data.words.slice(0, wordCount).join(' '));
@@ -95,7 +98,7 @@ const TypingArea = ({ onKeyPress }) => {
         setMode('words');
         setOption(30);
         setLanguage(lang === 'en' ? 'english' : 'myanmar');
-        setSampleText(dummyData['english'].words.slice(0, 30).join(' ')); // Set default sample text
+        setSampleText(dummyData['english'].words.slice(0, 30).join(' '));
       }
     } catch (error) {
       toast.error(`Error setting sample text: ${error.message}`);
@@ -132,7 +135,7 @@ const TypingArea = ({ onKeyPress }) => {
 
   // Handle timer for time mode
   useEffect(() => {
-    if (mode === "time" && hasStarted) {
+    if (mode === 'time' && hasStarted) {
       setTimer(option);
       if (intervalId) clearInterval(intervalId);
       const id = setInterval(() => {
@@ -158,57 +161,115 @@ const TypingArea = ({ onKeyPress }) => {
   // Calculate results when test ends
   const calculateResults = () => {
     const now = Date.now();
-    const timeTaken = startTime ? (now - startTime) / 1000 : 0; // in seconds
+    const timeTaken = startTime ? (now - startTime) / 1000 : 0;
     const minutes = timeTaken / 60;
-    const wordCount = inputText.trim().split(/\s+/).filter(w => w !== '').length;
     const charactersTyped = inputText.length;
-    let correct = 0;
-    let incorrect = 0;
-    let extra = 0;
-    let miss = 0;
+    const wordCount = inputText.trim().split(/\s+/).filter(w => w !== '').length;
 
-    // Compare inputText with sampleText
-    for (let i = 0; i < sampleText.length; i++) {
-      if (i < inputText.length) {
-        if (inputText[i] === sampleText[i]) {
-          correct++;
+    let resultData;
+
+    if (mode === 'custom') {
+      // Custom mode: no reference text, so no accuracy or error tracking
+      const rawWpm = minutes > 0 ? Math.round((charactersTyped / 5) / minutes) : 0;
+      resultData = {
+        wpm: wpm,
+        raw: rawWpm,
+        accuracy: 100,
+        charactersTyped,
+        correct: charactersTyped,
+        incorrect: 0,
+        extra: 0,
+        miss: 0,
+        consistency: 100,
+        timeTaken: Number(timeTaken.toFixed(1)),
+        language: language === 'english' ? 'en' : 'mm',
+        mode: mode.toUpperCase(),
+        timeLimit: null,
+        wordLimit: null,
+        createdAt: new Date().toISOString()
+      };
+    } else {
+      // Other modes: compare with sampleText
+      let correct = 0;
+      let incorrect = 0;
+      let extra = 0;
+      let miss = 0;
+
+      for (let i = 0; i < sampleText.length; i++) {
+        if (i < inputText.length) {
+          if (inputText[i] === sampleText[i]) {
+            correct++;
+          } else {
+            incorrect++;
+          }
         } else {
-          incorrect++;
+          miss++;
         }
-      } else {
-        miss++;
       }
+      extra = inputText.length > sampleText.length ? inputText.length - sampleText.length : 0;
+
+      const accuracy = sampleText.length > 0 ? (correct / sampleText.length) * 100 : 0;
+      const rawWpm = minutes > 0 ? Math.round((charactersTyped / 5) / minutes) : 0;
+      const consistency = Math.round(accuracy * 0.8);
+
+      resultData = {
+        wpm,
+        raw: rawWpm,
+        accuracy: Number(accuracy.toFixed(1)),
+        charactersTyped,
+        correct,
+        incorrect,
+        extra,
+        miss,
+        consistency,
+        timeTaken: Number(timeTaken.toFixed(1)),
+        language: language === 'english' ? 'en' : 'mm',
+        mode: mode.toUpperCase(),
+        timeLimit: mode === 'time' ? option : null,
+        wordLimit: mode === 'words' ? option : null,
+        createdAt: new Date().toISOString()
+      };
     }
-    extra = inputText.length > sampleText.length ? inputText.length - sampleText.length : 0;
-
-    const accuracy = sampleText.length > 0 ? (correct / sampleText.length) * 100 : 0;
-    const rawWpm = minutes > 0 ? Math.round((charactersTyped / 5) / minutes) : 0;
-    const consistency = Math.round(accuracy * 0.8); // Placeholder logic
-
-    const resultData = {
-      wpm,
-      raw: rawWpm,
-      accuracy: Number(accuracy.toFixed(1)),
-      charactersTyped,
-      correct,
-      incorrect,
-      extra,
-      miss,
-      consistency,
-      timeTaken: Number(timeTaken.toFixed(1)),
-      language: language === 'english' ? 'en' : 'mm',
-      mode: mode.toUpperCase(),
-      timeLimit: mode === 'time' ? option : null,
-      wordLimit: mode === 'words' ? option : null,
-      createdAt: new Date().toISOString(),
-    };
 
     setResults(resultData);
   };
 
+  // Helper function to find word boundaries
+  const getNextWordBoundary = (text, currentPosition) => {
+    const remainingText = text.slice(currentPosition);
+    const nextSpace = remainingText.indexOf(' ');
+    if (nextSpace === -1) {
+      return text.length;
+    }
+    return currentPosition + nextSpace + 1;
+  };
+
   const handleKeyDown = (e) => {
     const key = e.key;
-    if (mode === "time" && timer === 0) {
+
+    // Handle Shift+Enter for custom mode
+    if (mode === 'custom' && key === 'Enter' && shiftActive) {
+      e.preventDefault();
+      if (hasStarted && inputText.length > 0) {
+        calculateResults();
+      }
+      return;
+    }
+
+    // Handle Shift key
+    if (key === 'Shift') {
+      setShiftActive(true);
+      return;
+    }
+
+    // Ignore function keys and other non-printable keys (except Enter for custom mode)
+    const isFunctionKey = /^(F[1-12]|Control|Alt|Meta|Tab|CapsLock|Arrow|Escape)$/i.test(key);
+    if (isFunctionKey) {
+      e.preventDefault();
+      return;
+    }
+
+    if (mode === 'time' && timer === 0) {
       e.preventDefault();
       return;
     }
@@ -218,20 +279,24 @@ const TypingArea = ({ onKeyPress }) => {
       setInputText('');
       setCursorPosition(0);
       setStartTime(Date.now());
+      setActiveKey('');
       e.preventDefault();
       return;
     }
 
     if (key === 'Backspace') {
-      if (cursorPosition > 0) {
-        setInputText((prev) => prev.slice(0, -1));
-        setCursorPosition((prev) => prev - 1);
+      if (cursorPosition > 0 || mode === 'custom') {
+        setInputText(prev => prev.slice(0, -1));
+        if (mode !== 'custom') {
+          setCursorPosition(prev => prev - 1);
+        }
+        setActiveKey('');
       }
       e.preventDefault();
       return;
     }
 
-    if (cursorPosition >= sampleText.length) {
+    if (mode !== 'custom' && cursorPosition >= sampleText.length) {
       e.preventDefault();
       if (mode !== 'time') {
         calculateResults();
@@ -239,19 +304,45 @@ const TypingArea = ({ onKeyPress }) => {
       return;
     }
 
-    const isPrintable = /^[a-zA-Z]|\p{Script=Myanmar}$|^[\.,'!?-]$/u.test(key);
+    const isPrintable = /^[a-zA-Z]|\p{Script=Myanmar}$|^[\.,'!?-]|^[\s]$/u.test(key);
 
-    if (key === ' ' || isPrintable) {
-      const currentChar = sampleText[cursorPosition];
-      setInputText((prev) => prev + key);
-      setCursorPosition((prev) => prev + 1);
-      onKeyPress(key);
+    if (isPrintable) {
+      if (mode === 'custom') {
+        setInputText(prev => prev + key);
+        setActiveKey(key);
+      } else {
+        const currentChar = sampleText[cursorPosition];
+        if (key === ' ') {
+          if (currentChar === ' ') {
+            const nextBoundary = getNextWordBoundary(sampleText, cursorPosition);
+            setInputText(prev => prev + ' ');
+            setCursorPosition(nextBoundary);
+            setActiveKey(' ');
+          } else {
+            setInputText(prev => prev + ' ');
+            setCursorPosition(prev => prev + 1);
+            setActiveKey(' ');
+          }
+        } else {
+          setInputText(prev => prev + key);
+          setCursorPosition(prev => prev + 1);
+          setActiveKey(key);
+        }
+      }
+
       e.preventDefault();
 
-      if (cursorPosition + 1 >= sampleText.length && mode !== 'time') {
+      if (mode !== 'custom' && mode !== 'time' && cursorPosition + 1 >= sampleText.length) {
         calculateResults();
       }
     }
+  };
+
+  const handleKeyUp = (e) => {
+    if (e.key === 'Shift') {
+      setShiftActive(false);
+    }
+    setActiveKey('');
   };
 
   const handleContainerClick = () => {
@@ -270,16 +361,20 @@ const TypingArea = ({ onKeyPress }) => {
     setStartTime(null);
     setResults(null);
     setIntervalId(null);
-    if (inputDivRef.current) inputDivRef.current.focus();
+    setShiftActive(false);
+    setActiveKey('');
+    if (inputDivRef.current) {
+      inputDivRef.current.focus();
+    }
   };
 
   const renderTextWithHighlighting = () => {
-    if (!sampleText) return <span>No text available</span>;
+    if (!sampleText) return <span className="text-[#777C90]">No text available</span>;
 
-    const characters = sampleText.split('');
+    const chars = sampleText.split('');
     return (
       <>
-        {characters.map((char, index) => {
+        {chars.map((char, index) => {
           let className = 'text-[#777C90]';
           if (index < inputText.length) {
             className = inputText[index] === char ? 'text-green-500' : 'text-red-500';
@@ -302,7 +397,7 @@ const TypingArea = ({ onKeyPress }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mb-8" onClick={handleContainerClick}>
+    <div className="w-full max-w-2xl mx-auto mb-8" onClick={handleContainerClick}>
       <div className="flex justify-center">
         <TestModeSelector
           mode={mode}
@@ -319,12 +414,12 @@ const TypingArea = ({ onKeyPress }) => {
           <span className="text-yellow-400 text-xl">⏰ {timer}s</span>
         )}
         {hasStarted && (
-          <span className="text-green-400 text-xl">WPM: {wpm}</span>
+          <span className="text-green-500 text-xl">WPM: {wpm}</span>
         )}
       </div>
 
       <p
-        className="mb-2 text-lg flex justify-center items-center"
+        className="text-lg mb-2 flex justify-center"
         style={{ color: '#F4F4F5' }}
       >
         {loading
@@ -337,7 +432,7 @@ const TypingArea = ({ onKeyPress }) => {
                 ? `Type as many words as possible in ${option} seconds in ${language}:`
                 : mode === 'quote'
                   ? `Type the following quote:`
-                  : `Type the following custom text in ${language}:`}
+                  : `Type anything you want (Shift+Enter to end):`}
       </p>
 
       {hasStarted && (
@@ -346,12 +441,19 @@ const TypingArea = ({ onKeyPress }) => {
           style={{
             backgroundColor: 'rgba(20, 23, 35, 0.8)',
             backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
           }}
         >
-          <p className="text-sm whitespace-pre-wrap">
-            {renderTextWithHighlighting()}
-          </p>
+          {mode === 'custom' ? (
+            <p className="text-sm whitespace-pre-wrap text-[#F4F4F5]">
+              {inputText || <span className="text-[#777C90]">Start typing...</span>}
+              {hasStarted && <span className="animate-blink">|</span>}
+            </p>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap">
+              {renderTextWithHighlighting()}
+            </p>
+          )}
         </div>
       )}
 
@@ -359,15 +461,20 @@ const TypingArea = ({ onKeyPress }) => {
         ref={inputDivRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
         style={{
           opacity: 0,
           position: 'absolute',
           width: '1px',
           height: '1px',
-          overflow: 'hidden',
+          overflow: 'hidden'
         }}
         aria-hidden="true"
       />
+
+      <div className="w-full flex justify-center pb-4 px-2 mt-8">
+        <Keyboard activeKey={activeKey} layout={language} shiftActive={shiftActive} />
+      </div>
     </div>
   );
 };
