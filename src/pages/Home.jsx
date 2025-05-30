@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import TypingArea from '../components/TypingArea';
-import { Link } from 'react-router-dom';
+import React, { useContext } from 'react';
+import TypingArea from "../components/TypingArea";
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowUp } from 'lucide-react';
+import { AuthContext } from '../context/AuthProvider';
 
 const TypingTestUI = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn } = useContext(AuthContext); // Ensure AuthContext is provided in a parent component
+  const navigate = useNavigate();
 
-  // Function to scroll to the top of the page
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -22,23 +23,8 @@ const TypingTestUI = () => {
         </p>
       </div>
 
-      {/* User Menu */}
-      <div className="absolute top-0 right-0 p-6">
-        {isLoggedIn ? (
-          <div className="flex items-center">
-            <img src="person.png" alt="Profile" className="w-8 h-8" />
-          </div>
-        ) : (
-          <div className="flex space-x-2">
-            <Link to="/sign-up">
-              <Button variant="ghost" className="text-gray-500">Sign-Up</Button>
-            </Link>
-          </div>
-        )}
-      </div>
-
       {/* Typing Test Components */}
-      <div className="flex flex-col items-center justify-center mt-15 flex-grow">
+      <div className="flex flex-col items-center justify-center flex-grow">
         <TypingArea />
       </div>
 
@@ -48,18 +34,24 @@ const TypingTestUI = () => {
           <Link to="/" className="text-gray-400 hover:text-white transition">
             Home
           </Link>
-          <Link to="/" className="text-gray-400 hover:text-white transition">
+          <Link to="/test" className="text-gray-400 hover:text-white transition">
             Typing Test
           </Link>
-          <Link to="/results" className="text-gray-400 hover:text-white transition">
+          <Link to="/leaderboard" className="text-gray-400 hover:text-white transition">
             LeaderBoard
-          </Link>
-          <Link to="/about" className="text-gray-400 hover:text-white transition">
-            About
           </Link>
           <Link to="/contact" className="text-gray-400 hover:text-white transition">
             Contact
           </Link>
+          {isLoggedIn ? (
+            <Link to="/profiles" className="text-gray-400 hover:text-white transition">
+              Go to Your Profile
+            </Link>
+          ) : (
+            <Link to="/sign-up" className="text-gray-400 hover:text-white transition">
+              Sign-Up
+            </Link>
+          )}
         </div>
         <div className="flex justify-center items-center space-x-2 mb-2">
           <p className="text-gray-400 text-sm">

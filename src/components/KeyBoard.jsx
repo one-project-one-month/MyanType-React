@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeProvider';
 
 // Define keyboard layouts
 const layouts = {
@@ -29,6 +30,8 @@ const layouts = {
 };
 
 const Keyboard = ({ activeKey, layout = 'english', shiftActive = false }) => {
+  const { themes, currentTheme } = useTheme();
+
   // Select the appropriate layout based on layout and shift state
   const keyboardLayout = layout === 'myanmar' && shiftActive
     ? layouts.myanmar.shift
@@ -48,14 +51,13 @@ const Keyboard = ({ activeKey, layout = 'english', shiftActive = false }) => {
               style={{
                 backgroundColor:
                   normalizedActiveKey === key.toLowerCase() || activeKey === key
-                    ? '#777C90'
-                    : '#141723',
+                    ? '#777C90' // Active key highlight (unchanged)
+                    : themes[currentTheme].keyboard,
                 color: '#F4F4F5',
-                // Rectangle shape for spacebar
-                width: key === ' ' ? '200px' : '40px', // Wider spacebar, standard width for others
-                height: key === ' ' ? '40px' : '40px', // Consistent height for rectangle shape
-                lineHeight: '40px', // Center text vertically
-                borderRadius: key === ' ' ? '8px' : '8px', // Slightly rounded for rectangle look
+                width: key === ' ' ? '200px' : '40px',
+                height: key === ' ' ? '40px' : '40px',
+                lineHeight: '40px',
+                borderRadius: key === ' ' ? '8px' : '8px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

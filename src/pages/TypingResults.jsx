@@ -38,11 +38,11 @@ const TypingResults = () => {
   const defaultResults = {
     wpm: 65,
     accuracy: 92,
-    characters: 320,
-    correctChars: 295,
-    incorrectChars: 25,
-    duration: 60,
-    mode: "words",
+    charactersTyped: 320,
+    correct: 295,
+    incorrect: 25,
+    timeTaken: 60,
+    mode: "WORDS",
     timePerChar: {
       data: [
         { second: "0", speed: 62 },
@@ -50,24 +50,29 @@ const TypingResults = () => {
         { second: "60", speed: 64 },
       ],
     },
+    wordLimit: 60,
+    timeLimit: 60,
   };
 
   const normalizeResults = (rawResults) => {
+    const mode = rawResults.mode && rawResults.mode.toLowerCase();
+    const wpmData = rawResults.timePerChar?.data || [];
+    const normalizedData = wpmData.map(item => ({
+      [mode === 'time' ? 'second' : 'index']: mode === 'time' ? String(item.second) : String(item.index),
+      speed: item.speed || 0
+    }));
+
     return {
       wpm: rawResults.wpm || 0,
       accuracy: rawResults.accuracy || 0,
-      characters: rawResults.charactersTyped || 0,
-      correctChars: rawResults.correct || 0,
-      incorrectChars: rawResults.incorrect || 0,
-      duration: rawResults.timeTaken || 0,
-      mode: (rawResults.mode && rawResults.mode.toLowerCase()) || "words",
-      timePerChar: rawResults.timePerChar || {
-        data: [
-          { second: "0", speed: rawResults.wpm || 0 },
-          { second: String(Math.floor(rawResults.timeTaken / 2)), speed: rawResults.wpm || 0 },
-          { second: String(rawResults.timeTaken), speed: rawResults.wpm || 0 },
-        ],
-      },
+      charactersTyped: rawResults.charactersTyped || 0,
+      correct: rawResults.correct || 0,
+      incorrect: rawResults.incorrect || 0,
+      timeTaken: rawResults.timeTaken || 0,
+      mode,
+      timePerChar: { data: normalizedData },
+      wordLimit: rawResults.wordLimit || 0,
+      timeLimit: rawResults.timeLimit || 0,
     };
   };
 
@@ -78,7 +83,7 @@ const TypingResults = () => {
     if (location.state && location.state.results) {
       const sendData = async () => {
         try {
-          const response = await fetch('http://localhost:8181', {
+          const response = await fetch('https://myantype-nodejs.onrender.com/api/v1/result', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -86,7 +91,7 @@ const TypingResults = () => {
             body: JSON.stringify(location.state.results),
           });
           if (!response.ok) {
-            throw new Error('Failed to send data to localhost:8181');
+            throw new Error('Failed to send data');
           }
           console.log('Data sent successfully:', await response.json());
         } catch (error) {
@@ -121,6 +126,21 @@ const TypingResults = () => {
       : results.mode === "time"
       ? "Time (seconds)"
       : "Value";
+
+  const xAxisDataKey = results.mode === "words" ? "index" : "second";
+
+  // Generate x-axis ticks in increments of 5
+  const generateTicks = () => {
+    const maxValue =
+      results.mode === "words"
+        ? results.wordLimit || Math.ceil(results.charactersTyped / 5) // Estimate words from characters
+        : results.timeTaken;
+    const ticks = [];
+    for (let i = 0; i <= maxValue; i += 5) {
+      ticks.push(String(i));
+    }
+    return ticks;
+  };
 
   const showChart = results.mode === "words" || results.mode === "time";
 
@@ -182,10 +202,10 @@ const TypingResults = () => {
             <Card className="bg-[#141723] border-[#777C90] p-6">
               <CardHeader>
                 <CardTitle className="text-[#F4F4F5]">
-                  Speed over {results.mode === 'words' ? 'Words' : 'Time'}
+                  Speed over {results.mode === 'words' ? 'Words' : 'Time'} ({results.mode.toUpperCase()} Mode)
                 </CardTitle>
                 <CardDescription className="text-[#777C90]">
-                  Your typing speed during the test (WPM)
+                  Your typing speed during the {results.mode} test (WPM)
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-64 p-6">
@@ -196,9 +216,9 @@ const TypingResults = () => {
                       margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
                     >
                       <XAxis
-                        dataKey="second"
+                        dataKey={xAxisDataKey}
                         stroke="#777C90"
-                        ticks={["0", String(Math.floor(results.duration / 2)), String(results.duration)]}
+                        ticks={generateTicks()}
                         label={{
                           value: xAxisLabel,
                           position: "bottom",
@@ -220,9 +240,9 @@ const TypingResults = () => {
                       <Line
                         type="monotone"
                         dataKey="speed"
-                        name="speed"
+                        name="Speed (WPM)"
                         stroke="#60a5fa"
-                        strokeWidth={2}
+                        strokeWidth= {2}
                         dot={true}
                       />
                       <Tooltip content={<ChartTooltipContent />} />
@@ -236,7 +256,7 @@ const TypingResults = () => {
           <Card className="bg-[#141723] border-[#777C90]">
             <CardHeader>
               <CardTitle className="text-[#F4F4F5]">
-                Detailed Stats {results.mode === 'custom' ? '(Custom)' : results.mode === 'quote' ? '(Quote)' : ''}
+                Detailed Stats {results.mode === 'custom' ? '(Custom)' : results.mode === 'quote' ? '(Quote)' : `(${results.mode.toUpperCase()})`}
               </CardTitle>
               <CardDescription className="text-[#777C90]">
                 Complete breakdown of your {results.mode} test performance
@@ -253,19 +273,19 @@ const TypingResults = () => {
                 <TableBody>
                   <TableRow className="border-[#777C90]">
                     <TableCell className="text-[#F4F4F5]">Total Characters</TableCell>
-                    <TableCell className="text-right text-[#F4F4F5]">{results.characters}</TableCell>
+                    <TableCell className="text-right text-[#F4F4F5]">{results.charactersTyped}</TableCell>
                   </TableRow>
                   <TableRow className="border-[#777C90]">
                     <TableCell className="text-[#F4F4F5]">Correct Characters</TableCell>
-                    <TableCell className="text-right text-[#F4F4F5]">{results.correctChars}</TableCell>
+                    <TableCell className="text-right text-[#F4F4F5]">{results.correct}</TableCell>
                   </TableRow>
                   <TableRow className="border-[#777C90]">
                     <TableCell className="text-[#F4F4F5]">Incorrect Characters</TableCell>
-                    <TableCell className="text-right text-[#F4F4F5]">{results.incorrectChars}</TableCell>
+                    <TableCell className="text-right text-[#F4F4F5]">{results.incorrect}</TableCell>
                   </TableRow>
                   <TableRow className="border-[#777C90]">
                     <TableCell className="text-[#F4F4F5]">Test Duration</TableCell>
-                    <TableCell className="text-right text-[#F4F4F5]">{results.duration} seconds</TableCell>
+                    <TableCell className="text-right text-[#F4F4F5]">{results.timeTaken} seconds</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
