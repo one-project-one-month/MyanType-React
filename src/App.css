@@ -1,3 +1,6 @@
+/* Import JetBrains Mono from Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap");
+
 html,
 body {
   margin: 0;
@@ -5,10 +8,12 @@ body {
   height: 100%;
   width: 100%;
   background-color: #0e0f15;
+  font-family: "JetBrains Mono", monospace; /* Apply JetBrains Mono */
 }
 
 #root {
   width: 100%;
   height: 100%;
   background-color: #0e0f15;
+  font-family: "JetBrains Mono", monospace; /* Apply JetBrains Mono */
 }

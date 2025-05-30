@@ -1,5 +1,5 @@
 import {createColumnHelper, getCoreRowModel, getPaginationRowModel, useReactTable} from "@tanstack/react-table";
-import {Crown} from "lucide-react";
+import { Trophy } from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 import axios from "@/lib/axios.js";
 
@@ -10,13 +10,13 @@ const columns = [
         cell: info => {
             const rank = info.row.index + 1;
             const crownColor =
-                rank === 1 ? 'text-yellow-400' :
+                rank === 1 ? 'text-yellow-500' :
                     rank === 2 ? 'text-gray-300' :
-                        rank === 3 ? 'text-amber-500' : '';
+                        rank === 3 ? 'text-amber-600' : '';
 
             return (
                 <span className={'flex justify-center'}>
-                    {rank <= 3 ? <Crown className={`h-5 w-5 ${crownColor}`} /> : rank}
+                    {rank <= 3 ? <Trophy className={`h-4 w-4 ${crownColor}`} /> : rank}
                 </span>
             );
         },
@@ -24,24 +24,24 @@ const columns = [
     }),
     {
         id: 'name',
-        header: 'NAME',
+        header: 'Name',
         cell: info => {
             const { user } = info.row.original;
             const { username } = user || {};
             return (
-                <div className="flex items-center gap-1.5 text-left font-light">
+                <div className="flex items-end gap-1.5 text-left font-light">
                     <img src={'https://i.pinimg.com/736x/c0/74/9b/c0749b7cc401421662ae901ec8f9f660.jpg'} alt={username} className="w-5 h-5 rounded-full border border-zinc-600 object-cover" />
                     <span>{username}</span>
                 </div>
             );
         }
     },
-    columnHelper.accessor('wpm', { header: 'WPM' }),
-    columnHelper.accessor('accuracy', { header: 'ACCURACY', cell: info => `${info.getValue()}%` }),
-    columnHelper.accessor('raw', { header: 'RAW', cell: info => `${info.getValue()}%` }),
-    columnHelper.accessor('consistency', { header: 'CONSISTENCY' }),
+    columnHelper.accessor('wpm', { header: 'Wpm' }),
+    columnHelper.accessor('raw', { header: 'Raw' }),
+    columnHelper.accessor('accuracy', { header: 'Accuracy', cell: info => `${info.getValue()}%` }),
+    columnHelper.accessor('consistency', { header: 'Consistency', cell: info => `${info.getValue()}%` }),
     columnHelper.accessor('createdAt', {
-        header: 'DATE',
+        header: 'Date',
         cell: info => {
             const date = new Date(info.getValue());
             return date.toLocaleString();
@@ -57,7 +57,6 @@ export function useLeaderboard(mode, language) {
         queryFn: async () => {
             await new Promise(resolve => setTimeout(resolve, 1000));
             const res = await axios.get(`/leaderboard/${lang}/${mode}`);
-            console.log('Leaderboard API raw data:', res.data.data)
             return res.data.data;
         },
         staleTime: 60 * 1000,

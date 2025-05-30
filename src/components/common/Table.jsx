@@ -33,9 +33,9 @@ export default function Table({ table }) {
                                 {
                                     row.getVisibleCells().map((cell, i) => (
                                         <td key={cell.id} className={`
-                                    text-[15px] font-base px-4.5 py-4.5
-                                    ${i === 0 ? 'rounded-l-lg' : ''}
-                                    ${i === row.getVisibleCells().length - 1 ? 'rounded-r-lg' : ''}
+                                    text-[14px] font-base px-4.5 py-4
+                                    ${i === 0 ? 'rounded-l-sm' : ''}
+                                    ${i === row.getVisibleCells().length - 1 ? 'rounded-r-sm' : ''}
                                 `}>
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </td>
@@ -50,7 +50,7 @@ export default function Table({ table }) {
             </table>
             <div className="block tracking-wider sm:hidden">
                 {table.getRowModel().rows.map(row => (
-                    <div key={row.id} className="border border-[#3A3A67]/[0.32] rounded-xl p-4 mb-2">
+                    <div key={row.id} className="border border-[#3A3A67]/[0.32] rounded-xl p-4 mb-4">
                         {row.getVisibleCells().map(cell => (
                             <div key={cell.id} className="flex justify-between text-sm py-1">
                                 <span className="font-medium text-gray-50">{flexRender(cell.column.columnDef.header, cell.getContext())}</span>

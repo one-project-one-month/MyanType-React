@@ -3,8 +3,8 @@ import {useState} from "react";
 import {Loader2} from "lucide-react";
 import CountdownWithPagination from "@/components/leaderboard/CountdownWithPagination.jsx";
 import SessionFilter from "@/components/leaderboard/SessionFilter.jsx";
-import {useLeaderboard} from "../hooks/useLeaderboard.jsx";
 import Table from "@/components/common/Table.jsx";
+import {useLeaderboard} from "../../hooks/useLeaderboard.jsx";
 
 export default function Leaderboard() {
     const [mode, setMode] = useState(15);
@@ -12,7 +12,7 @@ export default function Leaderboard() {
     const { table, isLoading, isError } = useLeaderboard(mode, language);
 
     return (
-        <div className={'text-white mx-auto flex flex-col md:flex-row'}>
+        <div className={'text-white mx-auto p-4 flex flex-col md:flex-row md:px-16 md:pt-10'}>
             <aside className={'w-full mb-8 mr-8 md:w-1/4 space-y-6'}>
                 <SessionFilter mode={mode} setMode={setMode} language={language} setLanguage={setLanguage} />
             </aside>
