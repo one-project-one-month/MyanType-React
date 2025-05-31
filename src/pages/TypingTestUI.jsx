@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TestModeSelector from '../components/TestModeSelector';
-import Keyboard from '../components/Keyboard';
+import Keyboard from '../components/KeyBoard';
 import wordsData from '../data/wordsData.json';
 import TypingArea from '../components/TypingArea';
 import ResetButton from '../components/ResetButton';

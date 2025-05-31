@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 
 const timeModeData = {
+  id: "16",
+  userID: "-4226-8640-ffe6af726732",
   wpm: 50,
   raw: 60,
   accuracy: 90.3,
