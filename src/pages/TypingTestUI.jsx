@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import TestModeSelector from '../components/TestModeSelector';
 import Keyboard from '../components/KeyBoard';
@@ -26,6 +26,7 @@ const TypingTestUI = () => {
   const [testCompleted, setTestCompleted] = useState(false);
   const [intervals, setIntervals] = useState([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  const typingAreaRef = useRef(null); // Add ref to focus TypingArea
 
   // Helper function to count actual words typed correctly
   const countWordsTyped = (input, text) => {
@@ -241,7 +242,7 @@ const TypingTestUI = () => {
           duration: elapsedSeconds,
           wordsCompleted: Math.floor(userInput.length / 5),
           correctChars: 0,
-          incorrectChars: 0,
+          infectChars: 0,
           totalChars: userInput.length,
           intervals: intervals.map(interval => ({
             timestamp: interval.timestamp,
@@ -269,6 +270,9 @@ const TypingTestUI = () => {
     } else if (key === 'Enter' && mode !== 'custom') {
       event.preventDefault();
     } else if (key.length === 1) {
+      if (key === ' ') {
+        event.preventDefault(); // Prevent default behavior for space key
+      }
       setUserInput((prev) => prev + key);
     }
   };
@@ -308,6 +312,10 @@ const TypingTestUI = () => {
     setStartTime(null);
     setTestCompleted(false);
     setIntervals([]);
+    // Focus TypingArea after reset
+    if (typingAreaRef.current) {
+      typingAreaRef.current.focus();
+    }
   };
 
   return (
@@ -369,6 +377,7 @@ const TypingTestUI = () => {
           userInput={userInput}
           onUserInput={setUserInput}
           disabled={isTypingDisabled}
+          ref={typingAreaRef} // Pass ref to TypingArea
         />
         {isTypingDisabled && mode === 'time' && !testCompleted && (
           <div className="text-red-400 text-lg font-semibold mt-2">
