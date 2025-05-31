@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import TestModeSelector from '../components/TestModeSelector';
 import Keyboard from '../components/KeyBoard';
 import wordsData from '../data/wordsData.json';
@@ -10,6 +10,7 @@ import TimerComponent from '../components/TimerComponent';
 import { useTypingTest } from '../context/TypingTestContext';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from "@/components/ui/button";
+import { Home } from 'lucide-react';
 
 const TypingTestUI = () => {
   const { addResult, addWpmPoint, wpmHistory, results } = useTypingTest();
@@ -23,14 +24,13 @@ const TypingTestUI = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [startTime, setStartTime] = useState(null);
   const [testCompleted, setTestCompleted] = useState(false);
-  const [intervalWpm, setIntervalWpm] = useState([]);
+  const [intervals, setIntervals] = useState([]);
   const [isCalculating, setIsCalculating] = useState(false);
 
   // Helper function to count actual words typed correctly
   const countWordsTyped = (input, text) => {
     const inputWords = input.trim().split(/\s+/).filter(word => word.length > 0);
     const textWords = text.trim().split(/\s+/).filter(word => word.length > 0);
-    
     let correctWords = 0;
     for (let i = 0; i < inputWords.length && i < textWords.length; i++) {
       if (inputWords[i] === textWords[i]) {
@@ -43,10 +43,19 @@ const TypingTestUI = () => {
   // Helper function to check if quote/text is completely typed
   const isTextCompleted = (input, text, mode) => {
     if (mode === 'quote') {
-      // For quote mode, check if user has typed the entire text correctly
       return input.length >= text.length && input === text;
     }
     return false;
+  };
+
+  // Calculate consistency
+  const calculateConsistency = (intervalData) => {
+    if (intervalData.length < 2) return 100;
+    const wpms = intervalData.map((point) => point.wpm);
+    const mean = wpms.reduce((sum, val) => sum + val, 0) / wpms.length;
+    const variance = wpms.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / wpms.length;
+    const stdDev = Math.sqrt(variance);
+    return Math.max(0, 100 - stdDev);
   };
 
   // Check if typing should be disabled (for time mode)
@@ -62,8 +71,6 @@ const TypingTestUI = () => {
   // Generate random words based on language and option for non-custom modes
   useEffect(() => {
     if (mode === 'quote') {
-      // For quote mode, you can add your quotes data here
-      // For now, using a sample quote - replace with your quotes data
       const sampleQuotes = [
         "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.",
         "Innovation distinguishes between a leader and a follower. Your time is limited, so don't waste it living someone else's life.",
@@ -86,101 +93,31 @@ const TypingTestUI = () => {
       resetTest();
     }
   }, [language, option, mode]);
-  useEffect(() => {
-    let interval;
-    if (isTyping && !startTime) {
-      setStartTime(Date.now());
-    }
-  
-    if (isTyping && startTime) {
-      interval = setInterval(() => {
-        const elapsedSeconds = (Math.floor((Date.now() - startTime) / 1000));
-        const elapsedMinutes = elapsedSeconds / 60;
-        const wordCount = calculateMetrics.correct / 5;
-  
-        // Track WPM at intervals (every 5 seconds or 5 words)
-        const intervalMark = mode === 'time' ? elapsedSeconds - (elapsedSeconds % 5) : Math.floor(wordCount / 5) * 5;
-        if (intervalMark >= 0 && !intervalWpm.some((point) => point.timeOrWords === intervalMark)) {
-          setIntervalWpm((prev) => [...prev, { timeOrWords: intervalMark, wpm: calculateMetrics.wpm }]);
-          addWpmPoint(intervalMark, calculateMetrics.wpm, mode);
-        }
-  
-        // Check for test completion
-        const actualWordsTyped = countWordsTyped(userInput, currentText);
-        const isQuoteComplete = isTextCompleted(userInput, currentText, mode);
-        const shouldComplete =
-          (mode === 'time' && elapsedSeconds >= option) ||
-          (mode === 'words' && actualWordsTyped >= option) ||
-          (mode === 'quote' && isQuoteComplete);
-  
-        if (shouldComplete) {
-          const result = {
-            id: uuidv4(),
-            userID: '910ffb6d-360c-4226-8640-ffe6af726732',
-            mode: mode.toUpperCase(),
-            language,
-            timeLimit: mode === 'time' ? option : null,
-            wordLimit: mode === 'words' ? option : null,
-            wpm: calculateMetrics.wpm,
-            raw: calculateMetrics.rawWpm,
-            accuracy: calculateMetrics.accuracy,
-            charactersTyped: userInput.length,
-            correct: calculateMetrics.correct,
-            incorrect: calculateMetrics.incorrect,
-            extra: calculateMetrics.extra,
-            miss: calculateMetrics.miss,
-            consistency: calculateMetrics.consistency,
-            timeTaken: elapsedSeconds,
-            createdAt: new Date().toISOString(),
-            timePerChar: { data: wpmHistory },
-          };
-          addResult(result);
-          setTestCompleted(true);
-          setIsCalculating(true);
-          setTimeout(() => {
-            setIsCalculating(false);
-            navigate('/results', { state: { results: result } });
-          }, 2000);
-          clearInterval(interval);
-        }
-      }, 100); // Reduced interval for more responsive checking
-    }
-  
-    return () => clearInterval(interval);
-  }, [isTyping, startTime, mode, option, language, addResult, addWpmPoint, wpmHistory, navigate, userInput, currentText]);
-  // Calculate consistency
-  const calculateConsistency = (wpmPoints) => {
-    if (wpmPoints.length < 2) return 100;
-    const wpms = wpmPoints.map((point) => point.wpm);
-    const mean = wpms.reduce((sum, val) => sum + val, 0) / wpms.length;
-    const variance = wpms.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / wpms.length;
-    const stdDev = Math.sqrt(variance);
-    return Math.max(0, 100 - stdDev);
+
+  // Calculate WPM
+  const calculateWPM = (correctChars, timeElapsed) => {
+    if (timeElapsed === 0) return 0;
+    return Math.round((correctChars / 5) / (timeElapsed / 60));
   };
 
-  // Calculate metrics using useMemo to avoid re-renders
+  // Calculate metrics (WPM, accuracy, etc.)
   const calculateMetrics = useMemo(() => {
-    // Custom mode: simplified calculations
     if (mode === 'custom') {
       const totalChars = userInput.length;
       const elapsedSeconds = startTime ? (Date.now() - startTime) / 1000 : 0;
-      const elapsedMinutes = elapsedSeconds / 60;
-      const wordCount = totalChars / 5; // Standard: 5 characters = 1 word
-      const calculatedWpm = elapsedMinutes > 0 ? Math.round(wordCount / elapsedMinutes) : 0;
-      
+      const wpm = calculateWPM(totalChars, elapsedSeconds);
       return {
-        wpm: calculatedWpm,
-        rawWpm: calculatedWpm, // Same as WPM for custom mode
-        accuracy: 100, // Default 100% accuracy for custom mode
+        wpm: Math.min(wpm, 300), // Cap at reasonable maximum
+        rawWpm: Math.min(wpm, 300),
+        accuracy: 100,
         correct: 0,
         incorrect: 0,
         extra: 0,
         miss: 0,
-        consistency: 100, // Default 100% consistency for custom mode
+        consistency: 100,
       };
     }
 
-    // Regular mode: detailed calculations
     let correct = 0, incorrect = 0, extra = 0, miss = 0;
     for (let i = 0; i < Math.max(userInput.length, currentText.length); i++) {
       if (i < userInput.length && i < currentText.length) {
@@ -192,30 +129,96 @@ const TypingTestUI = () => {
         miss++;
       }
     }
+
     const totalChars = userInput.length;
-    const calculatedAccuracy = totalChars > 0 ? (correct / totalChars) * 100 : 100;
+    const accuracy = totalChars > 0 ? (correct / totalChars) * 100 : 100;
     const elapsedSeconds = startTime ? (Date.now() - startTime) / 1000 : 0;
-    const elapsedMinutes = elapsedSeconds / 60;
-    const wordCount = correct / 5;
-    const rawWordCount = totalChars / 5;
-    const calculatedWpm = elapsedMinutes > 0 ? Math.round(wordCount / elapsedMinutes) : 0;
-    const rawWpm = elapsedMinutes > 0 ? Math.round(rawWordCount / elapsedMinutes) : 0;
-    const consistencyScore = calculateConsistency(intervalWpm);
+    const wpm = calculateWPM(correct, elapsedSeconds);
+
     return {
-      wpm: calculatedWpm,
-      rawWpm,
-      accuracy: Math.round(calculatedAccuracy),
+      wpm: Math.min(wpm, 300),
+      rawWpm: Math.min(calculateWPM(totalChars, elapsedSeconds), 300),
+      accuracy: Math.round(accuracy),
       correct,
       incorrect,
       extra,
       miss,
-      consistency: Math.round(consistencyScore),
+      consistency: intervals.length > 1 ? calculateConsistency(intervals) : 100,
     };
-  }, [userInput, currentText, startTime, intervalWpm, mode]);
+  }, [userInput, currentText, startTime, intervals, mode]);
+
+  // Monitor typing and test completion
+  useEffect(() => {
+    let interval;
+    if (isTyping && !startTime) {
+      setStartTime(Date.now());
+    }
+
+    if (isTyping && startTime) {
+      interval = setInterval(() => {
+        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        const timeElapsed = Math.floor(elapsedSeconds);
+        const { wpm, accuracy, correct } = calculateMetrics;
+
+        // Record intervals every 2 seconds
+        if (timeElapsed >= 2 && timeElapsed % 2 === 0) {
+          const lastInterval = intervals[intervals.length - 1];
+          if (!lastInterval || lastInterval.timestamp !== timeElapsed) {
+            setIntervals((prev) => [
+              ...prev,
+              { wpm, accuracy, timestamp: timeElapsed },
+            ]);
+            addWpmPoint(timeElapsed, wpm, mode);
+          }
+        }
+
+        // Check for test completion
+        const actualWordsTyped = countWordsTyped(userInput, currentText);
+        const isQuoteComplete = isTextCompleted(userInput, currentText, mode);
+        const shouldComplete =
+          (mode === 'time' && elapsedSeconds >= option) ||
+          (mode === 'words' && actualWordsTyped >= option) ||
+          (mode === 'quote' && isQuoteComplete);
+
+        if (shouldComplete) {
+          const elapsedTime = elapsedSeconds;
+          const result = {
+            id: uuidv4(),
+            userID: '910ffb6d-360c-4226-8640-ffe6af726732',
+            mode: { type: mode.toUpperCase(), value: option },
+            language,
+            wpm: calculateMetrics.wpm,
+            accuracy: calculateMetrics.accuracy,
+            duration: elapsedTime,
+            wordsCompleted: mode === 'words' ? actualWordsTyped : Math.floor(userInput.length / 5),
+            correctChars: calculateMetrics.correct,
+            incorrectChars: calculateMetrics.incorrect,
+            totalChars: userInput.length,
+            intervals: intervals.map(interval => ({
+              timestamp: interval.timestamp,
+              wpm: interval.wpm,
+              accuracy: interval.accuracy,
+            })),
+            createdAt: new Date().toISOString(),
+            timePerChar: { data: wpmHistory },
+          };
+          addResult(result);
+          setTestCompleted(true);
+          setIsCalculating(true);
+          setTimeout(() => {
+            setIsCalculating(false);
+            navigate('/results');
+          }, 2000);
+          clearInterval(interval);
+        }
+      }, 100); // Updates every 100ms for real-time metrics
+    }
+
+    return () => clearInterval(interval);
+  }, [isTyping, startTime, mode, option, language, userInput, currentText, calculateMetrics, intervals, addResult, addWpmPoint, wpmHistory, navigate]);
 
   // Handle key press for typing
   const handleKeyPress = (event) => {
-    // Prevent typing if disabled
     if (isTypingDisabled) {
       event.preventDefault();
       return;
@@ -223,29 +226,28 @@ const TypingTestUI = () => {
 
     const key = event.key;
     setActiveKey(key);
-    
-    // Handle Shift+Enter for custom mode
+
     if (mode === 'custom' && key === 'Enter' && event.shiftKey) {
       event.preventDefault();
       if (userInput.trim().length > 0) {
-        // Complete the custom test
+        const elapsedSeconds = startTime ? (Date.now() - startTime) / 1000 : 0;
         const result = {
           id: uuidv4(),
           userID: '910ffb6d-360c-4226-8640-ffe6af726732',
-          mode: 'CUSTOM',
+          mode: { type: 'CUSTOM', value: null },
           language,
-          timeLimit: null,
-          wordLimit: null,
           wpm: calculateMetrics.wpm,
-          raw: calculateMetrics.rawWpm,
-          accuracy: 100, // Always 100% for custom mode
-          charactersTyped: userInput.length,
-          correct: 0, // Set to 0 for custom mode
-          incorrect: 0, // Set to 0 for custom mode
-          extra: 0, // Set to 0 for custom mode
-          miss: 0, // Set to 0 for custom mode
-          consistency: 100, // Always 100% for custom mode
-          timeTaken: startTime ? (Date.now() - startTime) / 1000 : 0,
+          accuracy: 100,
+          duration: elapsedSeconds,
+          wordsCompleted: Math.floor(userInput.length / 5),
+          correctChars: 0,
+          incorrectChars: 0,
+          totalChars: userInput.length,
+          intervals: intervals.map(interval => ({
+            timestamp: interval.timestamp,
+            wpm: interval.wpm,
+            accuracy: interval.accuracy,
+          })),
           createdAt: new Date().toISOString(),
           timePerChar: { data: wpmHistory },
         };
@@ -254,18 +256,17 @@ const TypingTestUI = () => {
         setIsCalculating(true);
         setTimeout(() => {
           setIsCalculating(false);
-          navigate('/results', { state: { results: result } });
+          navigate('/results');
         }, 2000);
       }
       return;
     }
 
     if (!isTyping) setIsTyping(true);
-    
+
     if (key === 'Backspace') {
       setUserInput((prev) => prev.slice(0, -1));
     } else if (key === 'Enter' && mode !== 'custom') {
-      // Prevent Enter in non-custom modes
       event.preventDefault();
     } else if (key.length === 1) {
       setUserInput((prev) => prev + key);
@@ -285,13 +286,12 @@ const TypingTestUI = () => {
       window.removeEventListener('keydown', handleKeyPress);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isTyping, isTypingDisabled, mode, userInput, calculateMetrics, startTime]); // Added dependencies
+  }, [isTyping, isTypingDisabled, mode, userInput, calculateMetrics, startTime]);
 
   // Reset the test
   const resetTest = () => {
     if (mode === 'quote') {
       // Keep the current quote text, don't regenerate
-      // Quote text is already set in the useEffect above
     } else if (mode !== 'custom') {
       const selectedLanguageData = wordsData.find((data) => data.language === language);
       const words = selectedLanguageData.words;
@@ -307,21 +307,26 @@ const TypingTestUI = () => {
     setActiveKey(null);
     setStartTime(null);
     setTestCompleted(false);
-    setIntervalWpm([]);
+    setIntervals([]);
   };
 
   return (
     <div className="min-h-screen p-4 text-white flex flex-col">
       <div className="flex flex-col items-center justify-center flex-grow">
         <h1 className="text-2xl font-bold mb-8">Select your desired typing mode</h1>
-        <TestModeSelector
-          mode={mode}
-          setMode={setMode}
-          option={option}
-          setOption={setOption}
-          language={language}
-          setLanguage={setLanguage}
-        />
+        <div className="flex flex-row gap-4 items-center mb-8">
+          <TestModeSelector
+            mode={mode}
+            setMode={setMode}
+            option={option}
+            setOption={setOption}
+            language={language}
+            setLanguage={setLanguage}
+          />
+          <div className="transform -translate-y-2">
+            <ResetButton onReset={resetTest} />
+          </div>
+        </div>
         {mode === 'time' && (
           <TimerComponent
             isTyping={isTyping}
@@ -331,7 +336,7 @@ const TypingTestUI = () => {
           />
         )}
         <MetricsDisplay wpm={calculateMetrics.wpm} accuracy={calculateMetrics.accuracy} />
-        
+
         {/* Show word progress for word mode */}
         {mode === 'words' && (
           <div className="text-center mb-2">
@@ -340,7 +345,7 @@ const TypingTestUI = () => {
             </span>
           </div>
         )}
-        
+
         {/* Show quote progress for quote mode */}
         {mode === 'quote' && (
           <div className="text-center mb-2">
@@ -349,7 +354,7 @@ const TypingTestUI = () => {
             </span>
           </div>
         )}
-        
+
         {/* Show custom mode instructions */}
         {mode === 'custom' && (
           <div className="text-center mb-2">
@@ -358,12 +363,12 @@ const TypingTestUI = () => {
             </span>
           </div>
         )}
-        
+
         <TypingArea
           currentText={mode === 'custom' ? '' : currentText}
           userInput={userInput}
           onUserInput={setUserInput}
-          disabled={isTypingDisabled} // Pass disabled state to TypingArea
+          disabled={isTypingDisabled}
         />
         {isTypingDisabled && mode === 'time' && !testCompleted && (
           <div className="text-red-400 text-lg font-semibold mt-2">
@@ -371,22 +376,34 @@ const TypingTestUI = () => {
           </div>
         )}
         <div className="flex gap-4 mt-4">
-          <ResetButton onReset={resetTest} />
           {testCompleted && !isCalculating && (
             <Button
-              onClick={() => navigate('/results', { state: { results: results[results.length - 1] } })}
+              onClick={() => navigate('/results')}
               className="bg-[#141723] text-[#F4F4F5] border-[#777C90] hover:bg-[#777C90]"
             >
               See Your Results
             </Button>
           )}
           {testCompleted && isCalculating && (
-            <div className="text-center text-lg animate-pulse">
+            <div className="text-center text-lg animate-pulse mb-7">
               Calculating result .....
             </div>
           )}
         </div>
         <Keyboard activeKey={activeKey} layout={language} />
+        <div className="mt-4">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              isActive
+                ? 'text-white'
+                : 'text-gray-400 hover:text-white transition'
+            }
+            title="Back to Home"
+          >
+            <Home size={24} />
+          </NavLink>
+        </div>
       </div>
       <footer className="py-4 mt-4 text-center">
         <p className="text-gray-400 text-sm">

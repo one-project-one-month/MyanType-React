@@ -1,311 +1,305 @@
-import React, { useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import { Trophy, Star, Award } from "lucide-react";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RotateCcw, TrendingUp, Target, Clock, Hash } from "lucide-react";
+import ResultsChart from "../components/ResultChart";
+import { useTypingTest } from '../context/TypingTestContext';
+import { Link } from 'react-router-dom';
+import { Home, Keyboard, Trophy, Info, User, LogOut } from 'lucide-react';
 
-const TypingResults = () => {
-  const location = useLocation();
+const TypingResults = ({ onRestart }) => {
+  const { results } = useTypingTest();
+  const [apiStatus, setApiStatus] = useState({ loading: false, message: '', error: false });
+  
+  // Get the latest result from context
+  const result = results.length > 0 ? results[results.length - 1] : null;
 
-  const defaultResults = {
-    wpm: 65,
-    accuracy: 92,
-    characters: 320,
-    correct: 295,
-    incorrect: 25,
-    duration: 60,
-    mode: "words",
-    timePerChar: {
-      data: [
-        { word: 0, speed: 62 },
-        { word: 30, speed: 67 },
-        { word: 60, speed: 64 },
-      ],
-    },
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
-  const normalizeResults = (rawResults) => {
-    let chartData = [];
-    if (rawResults.timePerChar && rawResults.timePerChar.data && rawResults.timePerChar.data.length > 0) {
-      chartData = rawResults.timePerChar.data;
-    } else {
-      const isTimeMode = rawResults.mode && rawResults.mode.toLowerCase() === 'time';
-      const duration = rawResults.timeTaken || 60;
-      const points = 5;
-      for (let i = 0; i <= points; i++) {
-        const value = isTimeMode ? (duration * i) / points : (rawResults.wordLimit || 50) * i / points;
-        chartData.push({
-          [isTimeMode ? 'second' : 'word']: Math.round(value),
-          speed: rawResults.wpm + (Math.random() - 0.5) * 10
-        });
-      }
-    }
+
+  const getGrade = (wpm) => {
+    if (wpm >= 70) return { grade: 'A+', color: 'text-green-400' };
+    if (wpm >= 60) return { grade: 'A', color: 'text-green-400' };
+    if (wpm >= 50) return { grade: 'B+', color: 'text-blue-400' };
+    if (wpm >= 40) return { grade: 'B', color: 'text-blue-400' };
+    if (wpm >= 30) return { grade: 'C+', color: 'text-yellow-400' };
+    if (wpm >= 20) return { grade: 'C', color: 'text-yellow-400' };
+    return { grade: 'D', color: 'text-red-400' };
+  };
+
+  // Transform result to match API schema
+  const transformResultForAPI = (result) => {
+    if (!result) return null;
+
+    // Calculate consistency (already done in TypingTestUI, but ensure it's available)
+    const consistency = result.intervals.length > 1 
+      ? Math.round(100 - (Math.max(...result.intervals.map(i => i.wpm)) - Math.min(...result.intervals.map(i => i.wpm))))
+      : 100;
+
     return {
-      wpm: rawResults.wpm || 0,
-      accuracy: rawResults.accuracy || 0,
-      characters: rawResults.charactersTyped || 0,
-      correctChars: rawResults.correct || 0,
-      incorrectChars: rawResults.incorrect || 0,
-      duration: rawResults.timeTaken || 0,
-      mode: (rawResults.mode && rawResults.mode.toLowerCase()) || "words",
-      timePerChar: {
-        data: chartData,
-      },
+      wpm: result.wpm,
+      raw: result.wpm, // Assuming raw WPM is the same as WPM for now
+      accuracy: result.accuracy,
+      charactersTyped: result.totalChars,
+      correct: result.correctChars,
+      incorrect: result.incorrectChars,
+      extra: result.extra || 0, // Fallback to 0 if not available
+      miss: result.miss || 0, // Fallback to 0 if not available
+      consistency: consistency,
+      timeTaken: result.duration,
+      language: result.language,
+      mode: result.mode.type,
+      timeLimit: result.mode.value,
     };
   };
 
-  const usedDefault = !(location.state && location.state.results);
-  const results = normalizeResults(location.state?.results ?? defaultResults);
-
+  // Send results to API endpoint with retry logic
   useEffect(() => {
-    if (location.state && location.state.results) {
-      const sendData = async () => {
+    const sendResultsToAPI = async (retryCount = 3, delay = 2000) => {
+      if (!result) return;
+
+      // Skip sending data if mode is "custom"
+      if (result.mode.type.toLowerCase() === 'custom') {
+        setApiStatus({ loading: false, message: 'Custom mode results are not saved to the server.', error: false });
+        return;
+      }
+
+      const transformedResult = transformResultForAPI(result);
+      if (!transformedResult) return;
+
+      setApiStatus({ loading: true, message: 'Sending results...', error: false });
+
+      for (let attempt = 1; attempt <= retryCount; attempt++) {
         try {
-          const response = await fetch('http://localhost:8181', {
+          const response = await fetch('https://myantype-nodejs.onrender.com/api/v1/result', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              // Uncomment and add your API token if required
+              // 'Authorization': 'Bearer YOUR_API_TOKEN',
             },
-            body: JSON.stringify(location.state.results),
+            body: JSON.stringify(transformedResult),
           });
+
           if (!response.ok) {
-            throw new Error('Failed to send data to localhost:8181');
+            const errorText = await response.text();
+            throw new Error(`Failed to send results (Attempt ${attempt}/${retryCount}): ${errorText}`);
           }
-          console.log('Data sent successfully:', await response.json());
+
+          const data = await response.json();
+          setApiStatus({ loading: false, error: false });
+          console.log('Results sent successfully:', {
+            requestBody: transformedResult,
+            response: data,
+            timestamp: new Date().toISOString(),
+          });
+          return; // Exit on success
         } catch (error) {
-          console.error('Error sending data:', error);
+          console.error('Error on attempt', attempt, ':', error.message);
+          if (attempt === retryCount) {
+            setApiStatus({ loading: false, message: 'Failed to save results after retries.', error: true });
+            return;
+          }
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
-      };
-      sendData();
-    }
-  }, [location.state]);
+      }
+    };
 
-  const getGrade = (wpm) => {
-    if (wpm >= 80) return { grade: "A+", icon: <Trophy className="text-yellow-400" /> };
-    if (wpm >= 70) return { grade: "A", icon: <Trophy className="text-yellow-500" /> };
-    if (wpm >= 60) return { grade: "B", icon: <Award className="text-blue-500" /> };
-    if (wpm >= 50) return { grade: "C", icon: <Star className="text-green-500" /> };
-    if (wpm >= 40) return { grade: "D", icon: <Star className="text-orange-500" /> };
-    return { grade: "E", icon: <Star className="text-red-500" /> };
-  };
+    sendResultsToAPI();
+  }, [result]);
 
-  const grade = getGrade(results.wpm);
+  // If no result is available, show a fallback UI
+  if (!result) {
+    return (
+      <div className="max-w-4xl mx-auto text-center py-8 bg-[#0E0F15] border border-white">
+        <h2 className="text-3xl font-bold text-blue-400 mb-4">No Results Available</h2>
+        <p className="text-slate-400 mb-4">Please complete a typing test to see your results.</p>
+        <Button asChild className="flex items-center space-x-2">
+          <Link to="/test">
+            <RotateCcw size={16} />
+            <span>Take a Test</span>
+          </Link>
+        </Button>
+      </div>
+    );
+  }
 
-  const chartConfig = {
-    speed: {
-      theme: { light: "#60a5fa", dark: "#60a5fa" },
-      label: "Speed (WPM)",
-    },
-  };
-
-  const xAxisDataKey = results.mode === 'time' ? 'second' : 'word';
-  const xAxisLabel = results.mode === 'words' ? 'Words' : results.mode === 'time' ? 'Time (seconds)' : 'Value';
-  const showChart = results.mode === 'words' || results.mode === 'time';
+  const grade = getGrade(result.wpm);
 
   return (
-    <div className="bg-[#0E0F15] min-h-screen overflow-y-auto">
-      <div className="max-w-5xl mx-auto w-full py-4 md:py-8 px-4 md:px-8">
-        <h1 className="text-3xl font-bold mb-6 text-center text-[#F4F4F5]">
-          Typing Test Results
-        </h1>
-        {usedDefault && (
-          <div className="text-yellow-400 text-center mb-4">
-            No recent test data found. Showing sample results.
-          </div>
-        )}
+    <div className="max-w-4xl mx-auto bg-[#0E0F15] p-4">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-blue-400 mb-2">Test Results</h2>
+        <p className="text-slate-400">
+          {result.mode.type === 'time' ? `${result.mode.value} second` : `${result.mode.value} word`} test completed
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="bg-[#141723] border-[#777C90] h-40">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-sm font-medium text-[#F4F4F5]">Speed</CardTitle>
-                <CardDescription className="text-[#777C90]">Words Per Minute</CardDescription>
-              </div>
-              <Trophy className="h-5 w-5 text-yellow-500" />
-            </CardHeader>
-            <CardContent className="flex items-center justify-center">
-              <div className="text-3xl font-bold text-[#F4F4F5]">{results.wpm} WPM</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#141723] border-[#777C90] h-40">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-sm font-medium text-[#F4F4F5]">Accuracy</CardTitle>
-                <CardDescription className="text-[#777C90]">Percentage</CardDescription>
-              </div>
-              <Award className="h-5 w-5 text-blue-500" />
-            </CardHeader>
-            <CardContent className="flex items-center justify-center">
-              <div className="text-3xl font-bold text-[#F4F4F5]">{results.accuracy}%</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#141723] border-[#777C90] h-40">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-sm font-medium text-[#F4F4F5]">Grade</CardTitle>
-                <CardDescription className="text-[#777C90]">Performance Level</CardDescription>
-              </div>
-              {grade.icon}
-            </CardHeader>
-            <CardContent className="flex items-center justify-center">
-              <div className="text-3xl font-bold text-[#F4F4F5]">{grade.grade}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className={showChart ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "grid grid-cols-1 gap-6"}>
-          {showChart && (
-            <Card className="bg-[#141723] border-[#777C90] p-6">
-              <CardHeader>
-                <CardTitle className="text-[#F4F4F5]">
-                  Speed over {results.mode === 'words' ? 'Words' : 'Time'}
-                </CardTitle>
-                <CardDescription className="text-[#777C90]">
-                  Your typing speed during the test (WPM)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-80 p-6">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ChartContainer config={chartConfig}>
-                    <LineChart
-                      data={results.timePerChar.data}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                    >
-                      <XAxis
-                        dataKey={xAxisDataKey}
-                        stroke="#777C90"
-                        fontSize={12}
-                        tickLine={{ stroke: "#777C90" }}
-                        axisLine={{ stroke: "#777C90" }}
-                        label={{
-                          value: xAxisLabel,
-                          position: "insideBottom",
-                          offset: -5,
-                          style: { textAnchor: 'middle', fill: "#F4F4F5" }
-                        }}
-                      />
-                      <YAxis
-                        stroke="#777C90"
-                        fontSize={12}
-                        tickLine={{ stroke: "#777C90" }}
-                        axisLine={{ stroke: "#777C90" }}
-                        label={{
-                          value: "WPM",
-                          angle: -90,
-                          position: "insideLeft",
-                          style: { textAnchor: 'middle', fill: "#F4F4F5" }
-                        }}
-                        domain={['dataMin - 5', 'dataMax + 5']}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="speed"
-                        name="Speed (WPM)"
-                        stroke="#60a5fa"
-                        strokeWidth={3}
-                        dot={{ fill: "#60a5fa", strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6, stroke: "#60a5fa", strokeWidth: 2 }}
-                      />
-                      <Tooltip 
-                        content={<ChartTooltipContent />}
-                        labelStyle={{ color: "#F4F4F5" }}
-                        contentStyle={{ 
-                          backgroundColor: "#141723", 
-                          border: "1px solid #777C90",
-                          borderRadius: "6px"
-                        }}
-                      />
-                    </LineChart>
-                  </ChartContainer>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+      {/* API Status Message */}
+      {apiStatus.message && (
+        <div className={`text-center mb-4 ${apiStatus.error ? 'text-red-400' : 'text-green-400'}`}>
+          {apiStatus.loading ? (
+            <span className="animate-pulse">{apiStatus.message}</span>
+          ) : (
+            <span>{apiStatus.message}</span>
           )}
+        </div>
+      )}
 
-          <Card className="bg-[#141723] border-[#777C90]">
+      {/* Main Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <Card className="bg-[#0E0F15] border border-white">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-sm text-slate-400">Words Per Minute</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-4xl font-bold text-blue-400 mb-1">{result.wpm}</div>
+            <div className={`text-lg font-semibold ${grade.color}`}>{grade.grade}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#0E0F15] border border-white">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-sm text-slate-400">Accuracy</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-4xl font-bold text-green-400">{result.accuracy}%</div>
+            <div className="text-sm text-slate-400">
+              {result.correctChars}/{result.totalChars} chars
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#0E0F15] border border-white">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-sm text-slate-400">Duration</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-4xl font-bold text-yellow-400">{formatTime(result.duration)}</div>
+            <div className="text-sm text-slate-400">Total time</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#0E0F15] border border-white">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-sm text-slate-400">Words</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-4xl font-bold text-purple-400">{result.wordsCompleted}</div>
+            <div className="text-sm text-slate-400">Completed</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Analysis */}
+      <Tabs defaultValue="chart" className="mb-8">
+        <TabsList className="grid w-full grid-cols-2 bg-[#0E0F15] border border-white">
+          <TabsTrigger className="text-gray-500" value="chart">Performance Chart</TabsTrigger>
+          <TabsTrigger className="text-gray-500" value="breakdown">Breakdown</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="chart">
+          <Card className="bg-[#0E0F15] border border-white">
             <CardHeader>
-              <CardTitle className="text-[#F4F4F5]">
-                Detailed Stats {results.mode === 'custom' ? '(Custom)' : results.mode === 'quote' ? '(Quote)' : ''}
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp size={20} />
+                <span className="text-white">Performance Over Time</span>
               </CardTitle>
-              <CardDescription className="text-[#777C90]">
-                Complete breakdown of your {results.mode} test performance
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-[#777C90]">
-                    <TableHead className="text-[#F4F4F5]">Metric</TableHead>
-                    <TableHead className="text-right text-[#F4F4F5]">Value</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow className="border-[#777C90]">
-                    <TableCell className="text-[#F4F4F5]">Total Characters</TableCell>
-                    <TableCell className="text-right text-[#F4F4F5]">{results.characters}</TableCell>
-                  </TableRow>
-                  <TableRow className="border-[#777C90]">
-                    <TableCell className="text-[#F4F4F5]">Correct Characters</TableCell>
-                    <TableCell className="text-right text-[#F4F4F5]">{results.correctChars}</TableCell>
-                  </TableRow>
-                  <TableRow className="border-[#777C90]">
-                    <TableCell className="text-[#F4F4F5]">Incorrect Characters</TableCell>
-                    <TableCell className="text-right text-[#F4F4F5]">{results.incorrectChars}</TableCell>
-                  </TableRow>
-                  <TableRow className="border-[#777C90]">
-                    <TableCell className="text-[#F4F4F5]">Test Duration</TableCell>
-                    <TableCell className="text-right text-[#F4F4F5]">{Math.round(results.duration)} seconds</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <ResultsChart intervals={result.intervals} />
             </CardContent>
-            <CardFooter className="flex justify-between pb-6">
-              <Button
-                variant="outline"
-                asChild
-                className="bg-[#141723] text-[#F4F4F5] border-[#777C90] hover:bg-[#777C90] hover:text-[#F4F4F5]"
-              >
-                <Link to="/test">Take Another Test</Link>
-              </Button>
-              <Button
-                asChild
-                className="bg-[#141723] text-[#F4F4F5] border-[#777C90] hover:bg-[#777C90] hover:text-[#F4F4F5]"
-              >
-                <Link to="/">Back to Home</Link>
-              </Button>
-            </CardFooter>
           </Card>
-        </div>
-        <div className="h-16" />
+        </TabsContent>
+
+        <TabsContent value="breakdown">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-[#0E0F15] border border-white">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Target size={20} />
+                  <span className="text-white">Character Analysis</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Correct Characters</span>
+                    <span className="text-green-400 font-semibold">{result.correctChars}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Incorrect Characters</span>
+                    <span className="text-red-400 font-semibold">{result.incorrectChars}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Total Characters</span>
+                    <span className="text-blue-400 font-semibold">{result.totalChars}</span>
+                  </div>
+                  <div className="w-full bg-[#0E0F15] border border-white rounded-full h-2">
+                    <div
+                      className="bg-green-400 h-2 rounded-full"
+                      style={{ width: `${(result.correctChars / result.totalChars) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[#0E0F15] border border-white">
+              <CardHeader>
+                <CardTitle className="text-white">Performance Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Average WPM</span>
+                    <span className="text-blue-400 font-semibold">
+                      {result.intervals.length > 0 
+                        ? Math.round(result.intervals.reduce((sum, i) => sum + i.wpm, 0) / result.intervals.length)
+                        : result.wpm}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Peak WPM</span>
+                    <span className="text-green-400 font-semibold">
+                      {result.intervals.length > 0 
+                        ? Math.max(...result.intervals.map(i => i.wpm))
+                        : result.wpm}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Consistency</span>
+                    <span className="text-purple-400 font-semibold">
+                      {result.intervals.length > 1 
+                        ? `${Math.round(100 - (Math.max(...result.intervals.map(i => i.wpm)) - Math.min(...result.intervals.map(i => i.wpm))))}%`
+                        : '100%'}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Action Buttons */}
+      <div className="flex justify-center space-x-4">
+        <Button asChild className="flex items-center space-x-2">
+          <Link to="/test">
+            <RotateCcw size={16} />
+            <span>Take Another Test</span>
+          </Link>
+        </Button>
+        <Button asChild className="flex items-center space-x-2">
+          <Link to="/">
+            <Home size={16} />
+          </Link>
+        </Button>
       </div>
     </div>
   );
