@@ -26,38 +26,14 @@ const TypingTestUI = () => {
   const [testCompleted, setTestCompleted] = useState(false);
   const [intervals, setIntervals] = useState([]);
   const [isCalculating, setIsCalculating] = useState(false);
-  const typingAreaRef = useRef(null); // Add ref to focus TypingArea
-
-  // Helper function to count actual words typed correctly
-  const countWordsTyped = (input, text) => {
-    const inputWords = input.trim().split(/\s+/).filter(word => word.length > 0);
-    const textWords = text.trim().split(/\s+/).filter(word => word.length > 0);
-    let correctWords = 0;
-
-    // Compare complete words (those followed by a space)
-    for (let i = 0; i < inputWords.length && i < textWords.length; i++) {
-      if (inputWords[i] === textWords[i]) {
-        correctWords++;
-      }
-    }
-
-    // Check the last partial word if no trailing space
-    const lastInput = input.slice(input.lastIndexOf(' ') + 1);
-    const expectedWordIndex = inputWords.length;
-    if (lastInput && expectedWordIndex < textWords.length) {
-      const expectedWord = textWords[expectedWordIndex];
-      if (expectedWord.startsWith(lastInput)) {
-        correctWords++;
-      }
-    }
-
-    return correctWords;
-  };
+  const typingAreaRef = useRef(null);
 
   // Helper function to check if quote/text is completely typed
   const isTextCompleted = (input, text, mode) => {
     if (mode === 'quote') {
       return input.length >= text.length && input === text;
+    } else if (mode === 'words') {
+      return input.length >= text.length;
     }
     return false;
   };
@@ -121,7 +97,7 @@ const TypingTestUI = () => {
       const elapsedSeconds = startTime ? (Date.now() - startTime) / 1000 : 0;
       const wpm = calculateWPM(totalChars, elapsedSeconds);
       return {
-        wpm: Math.min(wpm, 300), // Cap at reasonable maximum
+        wpm: Math.min(wpm, 300),
         rawWpm: Math.min(wpm, 300),
         accuracy: 100,
         correct: 0,
@@ -187,11 +163,10 @@ const TypingTestUI = () => {
         }
 
         // Check for test completion
-        const actualWordsTyped = countWordsTyped(userInput, currentText);
         const isQuoteComplete = isTextCompleted(userInput, currentText, mode);
         const shouldComplete =
           (mode === 'time' && elapsedSeconds >= option) ||
-          (mode === 'words' && actualWordsTyped >= option) ||
+          (mode === 'words' && isQuoteComplete) ||
           (mode === 'quote' && isQuoteComplete);
 
         if (shouldComplete) {
@@ -204,7 +179,7 @@ const TypingTestUI = () => {
             wpm: calculateMetrics.wpm,
             accuracy: calculateMetrics.accuracy,
             duration: elapsedTime,
-            wordsCompleted: mode === 'words' ? actualWordsTyped : Math.floor(userInput.length / 5),
+            wordsCompleted: mode === 'words' ? option : Math.floor(userInput.length / 5),
             correctChars: calculateMetrics.correct,
             incorrectChars: calculateMetrics.incorrect,
             totalChars: userInput.length,
@@ -225,7 +200,7 @@ const TypingTestUI = () => {
           }, 2000);
           clearInterval(interval);
         }
-      }, 100); // Updates every 100ms for real-time metrics
+      }, 100);
     }
 
     return () => clearInterval(interval);
@@ -255,7 +230,7 @@ const TypingTestUI = () => {
           duration: elapsedSeconds,
           wordsCompleted: Math.floor(userInput.length / 5),
           correctChars: 0,
-          incorrectChars: 0, // Fixed typo from infectChars
+          incorrectChars: 0,
           totalChars: userInput.length,
           intervals: intervals.map(interval => ({
             timestamp: interval.timestamp,
@@ -284,7 +259,7 @@ const TypingTestUI = () => {
       event.preventDefault();
     } else if (key.length === 1) {
       if (key === ' ') {
-        event.preventDefault(); // Prevent default behavior for space key
+        event.preventDefault();
       }
       setUserInput((prev) => prev + key);
     }
@@ -308,7 +283,7 @@ const TypingTestUI = () => {
   // Reset the test
   const resetTest = () => {
     if (mode === 'quote') {
-      // Keep the current quote text, don't regenerate
+      // Keep the current quote text
     } else if (mode !== 'custom') {
       const selectedLanguageData = wordsData.find((data) => data.language === language);
       const words = selectedLanguageData.words;
@@ -325,7 +300,6 @@ const TypingTestUI = () => {
     setStartTime(null);
     setTestCompleted(false);
     setIntervals([]);
-    // Focus TypingArea after reset
     if (typingAreaRef.current) {
       typingAreaRef.current.focus();
     }
@@ -358,15 +332,6 @@ const TypingTestUI = () => {
         )}
         <MetricsDisplay wpm={calculateMetrics.wpm} accuracy={calculateMetrics.accuracy} />
 
-        {/* Show word progress for word mode */}
-        {mode === 'words' && (
-          <div className="text-center mb-2">
-            <span className="text-gray-400">
-              Words completed: {countWordsTyped(userInput, currentText)} / {option}
-            </span>
-          </div>
-        )}
-
         {/* Show quote progress for quote mode */}
         {mode === 'quote' && (
           <div className="text-center mb-2">
@@ -390,7 +355,7 @@ const TypingTestUI = () => {
           userInput={userInput}
           onUserInput={setUserInput}
           disabled={isTypingDisabled}
-          ref={typingAreaRef} // Pass ref to TypingArea
+          ref={typingAreaRef}
         />
         {isTypingDisabled && mode === 'time' && !testCompleted && (
           <div className="text-red-400 text-lg font-semibold mt-2">
@@ -398,14 +363,6 @@ const TypingTestUI = () => {
           </div>
         )}
         <div className="flex gap-4 mt-4">
-          {testCompleted && !isCalculating && (
-            <Button
-              onClick={() => navigate('/results')}
-              className="bg-[#141723] text-[#F4F4F5] border-[#777C90] hover:bg-[#777C90]"
-            >
-              See Your Results
-            </Button>
-          )}
           {testCompleted && isCalculating && (
             <div className="text-center text-lg animate-pulse mb-7">
               Calculating result .....
