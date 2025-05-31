@@ -1,3 +1,7 @@
+import { useContext, createContext, useState } from 'react';
+
+export const TypingTestContext = createContext();
+
 export const TypingTestProvider = ({ children }) => {
   const [results, setResults] = useState([]);
   const [wpmHistory, setWpmHistory] = useState([]);
@@ -10,7 +14,7 @@ export const TypingTestProvider = ({ children }) => {
     setWpmHistory((prev) => [
       ...prev,
       {
-        [mode === 'time' ? 'second' : 'word']: Number(timeOrWords), // Convert to number
+        [mode === 'time' ? 'second' : 'word']: Number(timeOrWords),
         speed: wpm,
       },
     ]);
@@ -21,4 +25,9 @@ export const TypingTestProvider = ({ children }) => {
       {children}
     </TypingTestContext.Provider>
   );
+};
+
+// ✅ Add this custom hook and export it
+export const useTypingTest = () => {
+  return useContext(TypingTestContext);
 };
