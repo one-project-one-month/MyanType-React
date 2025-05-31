@@ -1,0 +1,20 @@
+[
+    {
+      "language": "english",
+      "words": [
+        "apple", "banana", "cherry", "date", "elderberry",
+        "fig", "grape", "honeydew", "kiwi", "lemon",
+        "mango", "orange", "peach", "pear", "plum",
+        "raspberry", "strawberry", "tangerine", "watermelon", "blueberry"
+      ]
+    },
+    {
+      "language": "myanmar",
+      "words": [
+        "သနပ်", "ပန်း", "ချဉ်ပိန်း", "သပြေပင်", "လက်ဖက်",
+        "သပြေစိမ်း", "ပန်းခြောက်", "သံပုရား", "လက်ဝတ်ရွက်", "သပြေနှင်း",
+        "ပန်းပုပ်", "သပြေခြောက်", "ပျားပင်", "သပြေနံ့", "လက်ဖက်ခြောက်",
+        "သပြေဖူး", "ပန်းတကွဲ", "သပြေစိမ်းပင်", "လက်ဖက်နှင့်", "ပန်းပွင့်"
+      ]
+    }
+  ]
