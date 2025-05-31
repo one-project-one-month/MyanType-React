@@ -11,23 +11,20 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "build",
-    chunkSizeWarningLimit: 1000,
+    outDir: "dist", // Change from "build" to "dist" for Vercel
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split React libraries
           react: ["react", "react-dom"],
-          // Split routing libraries
           router: ["react-router", "react-router-dom"],
-          // Split UI libraries
           ui: ["@radix-ui/react-alert-dialog", "@radix-ui/react-label", "@radix-ui/react-progress", "@radix-ui/react-select", "@radix-ui/react-slot", "@radix-ui/react-tabs", "@radix-ui/react-tooltip"],
-          // Split data libraries
           data: ["@tanstack/react-query", "@tanstack/react-table", "@tanstack/match-sorter-utils"],
-          // Split chart libraries
           charts: ["chart.js", "react-chartjs-2", "recharts"],
-          // Split other large libraries
-          utils: ["@faker-js/faker", "axios", "dayjs", "zod"]
+          // Split the large utils chunk further
+          faker: ["@faker-js/faker"],
+          axios: ["axios"],
+          misc: ["dayjs", "zod", "uuid", "clsx", "tailwind-merge"]
         },
       },
     },
