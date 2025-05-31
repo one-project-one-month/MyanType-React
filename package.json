@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "ls -la build && chmod -R 755 build",
+    "postbuild": "ls -la build && chmod -R 755 dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
