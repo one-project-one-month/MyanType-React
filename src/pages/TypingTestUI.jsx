@@ -33,11 +33,24 @@ const TypingTestUI = () => {
     const inputWords = input.trim().split(/\s+/).filter(word => word.length > 0);
     const textWords = text.trim().split(/\s+/).filter(word => word.length > 0);
     let correctWords = 0;
+
+    // Compare complete words (those followed by a space)
     for (let i = 0; i < inputWords.length && i < textWords.length; i++) {
       if (inputWords[i] === textWords[i]) {
         correctWords++;
       }
     }
+
+    // Check the last partial word if no trailing space
+    const lastInput = input.slice(input.lastIndexOf(' ') + 1);
+    const expectedWordIndex = inputWords.length;
+    if (lastInput && expectedWordIndex < textWords.length) {
+      const expectedWord = textWords[expectedWordIndex];
+      if (expectedWord.startsWith(lastInput)) {
+        correctWords++;
+      }
+    }
+
     return correctWords;
   };
 
@@ -242,7 +255,7 @@ const TypingTestUI = () => {
           duration: elapsedSeconds,
           wordsCompleted: Math.floor(userInput.length / 5),
           correctChars: 0,
-          infectChars: 0,
+          incorrectChars: 0, // Fixed typo from infectChars
           totalChars: userInput.length,
           intervals: intervals.map(interval => ({
             timestamp: interval.timestamp,
