@@ -51,7 +51,7 @@ const TypingTestUI = () => {
           <Link to="/" className="text-gray-400 hover:text-white transition">
             Typing Test
           </Link>
-          <Link to="/results" className="text-gray-400 hover:text-white transition">
+          <Link to="/leaderboard" className="text-gray-400 hover:text-white transition">
             LeaderBoard
           </Link>
           <Link to="/about" className="text-gray-400 hover:text-white transition">
