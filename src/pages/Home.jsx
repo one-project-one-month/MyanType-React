@@ -1,83 +1,103 @@
-import React, { useState } from 'react';
-import TypingArea from '../components/TypingArea';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { TypeAnimation } from 'react-type-animation';
 import { Button } from '@/components/ui/button';
-import { ArrowUp } from 'lucide-react';
+import { AuthContext } from '../context/AuthProvider';
 
-const TypingTestUI = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Function to scroll to the top of the page
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+const Homepage = () => {
+  const { isLoggedIn, logout } = useContext(AuthContext);
 
   return (
     <div className="min-h-screen p-4 text-white flex flex-col">
-      {/* Logo and Slogan at the Top */}
-      <div className="text-center mb-4">
-        <h1 className="text-3xl font-bold">Myan-Type</h1>
-        <p className="m-4 text-lg text-gray-400">
-          Master the Keyboard in Myanmar and English — Instant Feedback, Improved Speed
-        </p>
-      </div>
-
-      {/* User Menu */}
-      <div className="absolute top-0 right-0 p-6">
-        {isLoggedIn ? (
-          <div className="flex items-center">
-            <img src="person.png" alt="Profile" className="w-8 h-8" />
-          </div>
-        ) : (
-          <div className="flex space-x-2">
-            <Link to="/sign-up">
-              <Button variant="ghost" className="text-gray-500">Sign-Up</Button>
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* Typing Test Components */}
-      <div className="flex flex-col items-center justify-center mt-15 flex-grow">
-        <TypingArea />
-      </div>
-
-      {/* Footer */}
-      <footer className="mt-8 py-4 border-t border-gray-700 text-center">
-        <div className="flex justify-center space-x-6 mb-4">
+      <nav className="py-4 border-b border-gray-700 text-center">
+        <div className="flex justify-center space-x-6">
           <Link to="/" className="text-gray-400 hover:text-white transition">
             Home
           </Link>
-          <Link to="/" className="text-gray-400 hover:text-white transition">
+          <Link to="/test" className="text-gray-400 hover:text-white transition">
             Typing Test
           </Link>
-          <Link to="/results" className="text-gray-400 hover:text-white transition">
+          <Link to="/leaderboard" className="text-gray-400 hover:text-white transition">
             LeaderBoard
           </Link>
           <Link to="/about" className="text-gray-400 hover:text-white transition">
             About
           </Link>
-          <Link to="/contact" className="text-gray-400 hover:text-white transition">
-            Contact
-          </Link>
+          {isLoggedIn ? (
+            <Link to="/profile" className="text-gray-400 hover:text-white transition">
+              Profile
+            </Link>
+          ) : (
+            <Link to="/sign-up" className="text-gray-400 hover:text-white transition">
+              Sign Up
+            </Link>
+          )}
         </div>
-        <div className="flex justify-center items-center space-x-2 mb-2">
-          <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} Myan-Type. All rights reserved.
-          </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={scrollToTop}
-            className="text-gray-400 hover:text-white"
+      </nav>
+
+      {/* User Menu */}
+      <div className="absolute top-0 right-0 p-6">
+        {isLoggedIn ? (
+          <button
+            onClick={logout}
+            className="text-gray-500 hover:text-white transition"
           >
-            <ArrowUp className="w-4 h-4 mr-1" />
-            Back to Top
-          </Button>
+            Logout
+          </button>
+        ) : null}
+      </div>
+
+      {/* Centered Logo, Slogan, Type Display Box, and Start Typing Button */}
+      <div className="flex flex-col items-center justify-center flex-grow">
+        <h1 className="text-5xl font-bold mb-4">Myan-Type</h1>
+        <div className="text-lg text-gray-400 mb-6">
+          <TypeAnimation
+            sequence={[
+              'Master the Keyboard in Myanmar and English',
+              1000,
+              'Instant Feedback, Improved Speed',
+              1000,
+            ]}
+            wrapper="p"
+            speed={50}
+            repeat={Infinity}
+          />
         </div>
+        {/* Type Display Box */}
+        <div className="w-3/4 max-w-2xl bg-[#0e0f15] border border-gray-600 rounded-lg p-4 mb-6 text-lg font-mono text-gray-200 min-h-[60px] flex items-center">
+          <TypeAnimation
+            sequence={[
+              'the quick brown fox jumps over the lazy dog .... ',
+              2000,
+              'အောင်မြင်ရန် တစ်ခုတည်းသောနည်းလမ်းမှာ သင်လုပ်သည်ကို ချစ်ခြင်းဖြစ်သည်။',
+              2000,
+              '',
+              500,
+            ]}
+            wrapper="span"
+            speed={50}
+            repeat={Infinity}
+            cursor={true}
+          />
+        </div>
+        <Link to="/test">
+          <Button
+            className="bg-[#0e0f15] border-2 border-white hover:border-glow hover:shadow-[0_0_10px_2px_rgba(255,255,255,0.7)] transition-shadow duration-300"
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            Start Typing
+          </Button>
+        </Link>
+      </div>
+
+      {/* Footer */}
+      <footer className="py-4 border-t border-gray-700 text-center">
+        <p className="text-gray-400 text-sm">
+          © {new Date().getFullYear()} Myan-Type. All rights reserved.
+        </p>
       </footer>
     </div>
   );
 };
 
-export default TypingTestUI;
+export default Homepage;
