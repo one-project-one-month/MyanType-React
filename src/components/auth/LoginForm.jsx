@@ -1,3 +1,5 @@
+// src/components/LoginForm.jsx
+import { useContext } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,13 +20,14 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
 import { authApi } from "../../api/axiosConfig";
 import { loginFormSchema } from "../../utils/authFormSchema";
+import { AuthContext } from "../../context/AuthProvider";
 
 export function LoginForm() {
+  const { login } = useContext(AuthContext); // Access login function
   const form = useForm({
     resolver: zodResolver(loginFormSchema),
     defaultValues: { email: "", password: "" },
@@ -32,19 +35,24 @@ export function LoginForm() {
   const navigate = useNavigate();
 
   const onSubmit = async (values) => {
-    const { data } = await authApi.post("/auth/login", values);
-    if (data.success) {
-      toast.success(data.message);
-      navigate("/");
-    } else {
-      toast.error("something went wrong");
+    try {
+      const { data } = await authApi.post("/auth/login", values);
+      if (data.success) {
+        toast.success(data.message);
+        login(); // Update auth state
+        navigate("/"); // Redirect to TypingTestUI
+      } else {
+        toast.error("Something went wrong");
+      }
+    } catch (error) {
+      toast.error("Login failed. Please try again.");
     }
   };
 
   return (
     <div className={cn("flex flex-col gap-6")}>
       <Card
-        className="bg-[#0E0F15] border-[#0E0F15] "
+        className="bg-[#0E0F15] border-[#0E0F15]"
         style={{ boxShadow: "0 16px 32px rgba(0, 0, 0, 0.3)" }}
       >
         <CardHeader>
@@ -65,7 +73,7 @@ export function LoginForm() {
                     <FormControl>
                       <Input
                         {...field}
-                        type={"email"}
+                        type="email"
                         placeholder="example@email.com..."
                         className="bg-[#141723] py-5 text-white"
                       />
@@ -84,7 +92,7 @@ export function LoginForm() {
                       <Input
                         {...field}
                         placeholder="*********"
-                        type={"password"}
+                        type="password"
                         className="bg-[#141723] py-5 text-white"
                       />
                     </FormControl>
@@ -110,8 +118,8 @@ export function LoginForm() {
               </div>
             </form>
             <div className="mt-4 text-center text-sm text-white">
-              Don&apos;t have an account?{" "}
-              <Link to={"/sign-up"} className="underline underline-offset-4">
+              Don't have an account?{" "}
+              <Link to="/sign-up" className="underline underline-offset-4">
                 Sign up
               </Link>
             </div>
@@ -121,3 +129,5 @@ export function LoginForm() {
     </div>
   );
 }
+
+export default LoginForm;
