@@ -2,22 +2,19 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import TestModeSelector from '../components/TestModeSelector';
 import Keyboard from '../components/KeyBoard';
-import wordsData from '../data/wordsData.json';
 import TypingArea from '../components/TypingArea';
 import ResetButton from '../components/ResetButton';
 import MetricsDisplay from '../components/MetricsDisplay';
 import TimerComponent from '../components/TimerComponent';
-import { useTypingTest } from '../context/TypingTestContext';
+import { useData } from '../context/DataProvider';
+import { useTypingTest } from '../context/TypingTestContext'; // Import the context
 import { v4 as uuidv4 } from 'uuid';
-import { Button } from "@/components/ui/button";
 import { Home } from 'lucide-react';
 
 const TypingTestUI = () => {
-  const { addResult, addWpmPoint, wpmHistory, results } = useTypingTest();
+  const { words, quote, timeData, loading, error, lang, mode, option, setLang, setMode, setOption, reloadData } = useData();
+  const { addResult, addWpmPoint } = useTypingTest(); // Use context functions
   const navigate = useNavigate();
-  const [mode, setMode] = useState('words');
-  const [option, setOption] = useState(15);
-  const [language, setLanguage] = useState('english');
   const [currentText, setCurrentText] = useState('');
   const [userInput, setUserInput] = useState('');
   const [activeKey, setActiveKey] = useState(null);
@@ -27,8 +24,31 @@ const TypingTestUI = () => {
   const [intervals, setIntervals] = useState([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const typingAreaRef = useRef(null);
+  const keyboardRef = useRef(null);
 
-  // Helper function to check if quote/text is completely typed
+  // Remove local wpmHistory array since it's managed by context
+  // const wpmHistory = [];
+
+  // Reset typing states when mode changes
+  useEffect(() => {
+    setUserInput('');
+    setIsTyping(false);
+    setActiveKey(null);
+    setStartTime(null);
+    setTestCompleted(false);
+    setIntervals([]);
+    if (typingAreaRef.current) {
+      typingAreaRef.current.focus();
+    }
+  }, [mode]);
+
+  // Scroll to Keyboard when typing starts
+  useEffect(() => {
+    if (isTyping && keyboardRef.current) {
+      keyboardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isTyping]);
+
   const isTextCompleted = (input, text, mode) => {
     if (mode === 'quote') {
       return input.length >= text.length && input === text;
@@ -38,7 +58,6 @@ const TypingTestUI = () => {
     return false;
   };
 
-  // Calculate consistency
   const calculateConsistency = (intervalData) => {
     if (intervalData.length < 2) return 100;
     const wpms = intervalData.map((point) => point.wpm);
@@ -48,7 +67,6 @@ const TypingTestUI = () => {
     return Math.max(0, 100 - stdDev);
   };
 
-  // Check if typing should be disabled (for time mode)
   const isTypingDisabled = useMemo(() => {
     if (testCompleted) return true;
     if (mode === 'time' && startTime) {
@@ -58,39 +76,21 @@ const TypingTestUI = () => {
     return false;
   }, [mode, startTime, option, testCompleted]);
 
-  // Generate random words based on language and option for non-custom modes
   useEffect(() => {
-    if (mode === 'quote') {
-      const sampleQuotes = [
-        "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.",
-        "Innovation distinguishes between a leader and a follower. Your time is limited, so don't waste it living someone else's life.",
-        "Stay hungry, stay foolish. The people in the crazy enough to think they can change the world are the ones who do.",
-        "Success is not final, failure is not fatal: it is the courage to continue that counts. Never give up on a dream just because of the time it will take to accomplish it.",
-        "The future belongs to those who believe in the beauty of their dreams. Don't watch the clock; do what it does. Keep going."
-      ];
-      const randomQuote = sampleQuotes[Math.floor(Math.random() * sampleQuotes.length)];
-      setCurrentText(randomQuote);
-      resetTest();
-    } else if (mode !== 'custom') {
-      const selectedLanguageData = wordsData.find((data) => data.language === language);
-      const words = selectedLanguageData.words;
-      const randomWords = Array.from({ length: option }, () =>
-        words[Math.floor(Math.random() * words.length)]
-      ).join(' ');
-      setCurrentText(randomWords);
-      resetTest();
-    } else {
-      resetTest();
+    if (mode === 'words' || mode === 'time') {
+      setCurrentText(words);
+    } else if (mode === 'quote') {
+      setCurrentText(quote);
+    } else if (mode === 'custom') {
+      setCurrentText('');
     }
-  }, [language, option, mode]);
+  }, [mode, quote, words]);
 
-  // Calculate WPM
   const calculateWPM = (correctChars, timeElapsed) => {
     if (timeElapsed === 0) return 0;
     return Math.round((correctChars / 5) / (timeElapsed / 60));
   };
 
-  // Calculate metrics (WPM, accuracy, etc.)
   const calculateMetrics = useMemo(() => {
     if (mode === 'custom') {
       const totalChars = userInput.length;
@@ -137,7 +137,6 @@ const TypingTestUI = () => {
     };
   }, [userInput, currentText, startTime, intervals, mode]);
 
-  // Monitor typing and test completion
   useEffect(() => {
     let interval;
     if (isTyping && !startTime) {
@@ -148,9 +147,8 @@ const TypingTestUI = () => {
       interval = setInterval(() => {
         const elapsedSeconds = (Date.now() - startTime) / 1000;
         const timeElapsed = Math.floor(elapsedSeconds);
-        const { wpm, accuracy, correct } = calculateMetrics;
+        const { wpm, accuracy } = calculateMetrics;
 
-        // Record intervals every 2 seconds
         if (timeElapsed >= 2 && timeElapsed % 2 === 0) {
           const lastInterval = intervals[intervals.length - 1];
           if (!lastInterval || lastInterval.timestamp !== timeElapsed) {
@@ -158,11 +156,10 @@ const TypingTestUI = () => {
               ...prev,
               { wpm, accuracy, timestamp: timeElapsed },
             ]);
-            addWpmPoint(timeElapsed, wpm, mode);
+            addWpmPoint(timeElapsed, wpm, mode); // Use context function
           }
         }
 
-        // Check for test completion
         const isQuoteComplete = isTextCompleted(userInput, currentText, mode);
         const shouldComplete =
           (mode === 'time' && elapsedSeconds >= option) ||
@@ -175,7 +172,7 @@ const TypingTestUI = () => {
             id: uuidv4(),
             userID: '910ffb6d-360c-4226-8640-ffe6af726732',
             mode: { type: mode.toUpperCase(), value: option },
-            language,
+            language: lang === 'en' ? 'english' : 'myanmar',
             wpm: calculateMetrics.wpm,
             accuracy: calculateMetrics.accuracy,
             duration: elapsedTime,
@@ -183,20 +180,20 @@ const TypingTestUI = () => {
             correctChars: calculateMetrics.correct,
             incorrectChars: calculateMetrics.incorrect,
             totalChars: userInput.length,
-            intervals: intervals.map(interval => ({
+            intervals: intervals.map((interval) => ({
               timestamp: interval.timestamp,
               wpm: interval.wpm,
               accuracy: interval.accuracy,
             })),
             createdAt: new Date().toISOString(),
-            timePerChar: { data: wpmHistory },
+            timePerChar: { data: [] }, // wpmHistory is now managed by context
           };
-          addResult(result);
+          addResult(result); // Use context function to add result
           setTestCompleted(true);
           setIsCalculating(true);
           setTimeout(() => {
             setIsCalculating(false);
-            navigate('/results');
+            navigate('/results', { state: { result } }); // Pass result as state (optional)
           }, 2000);
           clearInterval(interval);
         }
@@ -204,9 +201,8 @@ const TypingTestUI = () => {
     }
 
     return () => clearInterval(interval);
-  }, [isTyping, startTime, mode, option, language, userInput, currentText, calculateMetrics, intervals, addResult, addWpmPoint, wpmHistory, navigate]);
+  }, [isTyping, startTime, mode, option, lang, userInput, currentText, calculateMetrics, intervals, addResult, addWpmPoint, navigate]);
 
-  // Handle key press for typing
   const handleKeyPress = (event) => {
     if (isTypingDisabled) {
       event.preventDefault();
@@ -224,7 +220,7 @@ const TypingTestUI = () => {
           id: uuidv4(),
           userID: '910ffb6d-360c-4226-8640-ffe6af726732',
           mode: { type: 'CUSTOM', value: null },
-          language,
+          language: lang === 'en' ? 'english' : 'myanmar',
           wpm: calculateMetrics.wpm,
           accuracy: 100,
           duration: elapsedSeconds,
@@ -232,20 +228,20 @@ const TypingTestUI = () => {
           correctChars: 0,
           incorrectChars: 0,
           totalChars: userInput.length,
-          intervals: intervals.map(interval => ({
+          intervals: intervals.map((interval) => ({
             timestamp: interval.timestamp,
             wpm: interval.wpm,
             accuracy: interval.accuracy,
           })),
           createdAt: new Date().toISOString(),
-          timePerChar: { data: wpmHistory },
+          timePerChar: { data: [] }, // wpmHistory is now managed by context
         };
-        addResult(result);
+        addResult(result); // Use context function to add result
         setTestCompleted(true);
         setIsCalculating(true);
         setTimeout(() => {
           setIsCalculating(false);
-          navigate('/results');
+          navigate('/results', { state: { result } }); // Pass result as state (optional)
         }, 2000);
       }
       return;
@@ -265,12 +261,10 @@ const TypingTestUI = () => {
     }
   };
 
-  // Handle key up to clear active key
   const handleKeyUp = () => {
     setActiveKey(null);
   };
 
-  // Add event listeners for typing
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
     window.addEventListener('keyup', handleKeyUp);
@@ -280,43 +274,39 @@ const TypingTestUI = () => {
     };
   }, [isTyping, isTypingDisabled, mode, userInput, calculateMetrics, startTime]);
 
-  // Reset the test
   const resetTest = () => {
-    if (mode === 'quote') {
-      // Keep the current quote text
-    } else if (mode !== 'custom') {
-      const selectedLanguageData = wordsData.find((data) => data.language === language);
-      const words = selectedLanguageData.words;
-      const randomWords = Array.from({ length: option }, () =>
-        words[Math.floor(Math.random() * words.length)]
-      ).join(' ');
-      setCurrentText(randomWords);
-    } else {
-      setCurrentText('');
-    }
+    console.log('Reset button clicked');
     setUserInput('');
     setIsTyping(false);
     setActiveKey(null);
     setStartTime(null);
     setTestCompleted(false);
     setIntervals([]);
+    if (mode === 'custom') {
+      setCurrentText('');
+    }
     if (typingAreaRef.current) {
       typingAreaRef.current.focus();
+    }
+    if (mode !== 'custom') {
+      reloadData();
     }
   };
 
   return (
     <div className="min-h-screen p-4 text-white flex flex-col">
       <div className="flex flex-col items-center justify-center flex-grow">
-        <h1 className="text-2xl font-bold mb-8">Select your desired typing mode</h1>
-        <div className="flex flex-row gap-4 items-center mb-8">
+        <h1 className="text-2xl font-bold mb-5">Select your desired typing mode</h1>
+        {error && <div className="text-red-400 text-lg mb-4">{error}</div>}
+        {loading && <div className="text-gray-400 text-lg mb-4">Loading...</div>}
+        <div className="flex flex-row gap-4 items-center mb-5">
           <TestModeSelector
             mode={mode}
             setMode={setMode}
             option={option}
             setOption={setOption}
-            language={language}
-            setLanguage={setLanguage}
+            language={lang === 'en' ? 'english' : 'myanmar'}
+            setLanguage={(lang) => setLang(lang === 'english' ? 'en' : 'mm')}
           />
           <div className="transform -translate-y-2">
             <ResetButton onReset={resetTest} />
@@ -328,11 +318,10 @@ const TypingTestUI = () => {
             startTime={startTime}
             timeLimit={option}
             testCompleted={testCompleted}
+            mode={mode}
           />
         )}
         <MetricsDisplay wpm={calculateMetrics.wpm} accuracy={calculateMetrics.accuracy} />
-
-        {/* Show quote progress for quote mode */}
         {mode === 'quote' && (
           <div className="text-center mb-2">
             <span className="text-gray-400">
@@ -340,8 +329,6 @@ const TypingTestUI = () => {
             </span>
           </div>
         )}
-
-        {/* Show custom mode instructions */}
         {mode === 'custom' && (
           <div className="text-center mb-2">
             <span className="text-gray-400 text-sm">
@@ -349,12 +336,11 @@ const TypingTestUI = () => {
             </span>
           </div>
         )}
-
         <TypingArea
           currentText={mode === 'custom' ? '' : currentText}
           userInput={userInput}
           onUserInput={setUserInput}
-          disabled={isTypingDisabled}
+          disabled={isTypingDisabled || loading}
           ref={typingAreaRef}
         />
         {isTypingDisabled && mode === 'time' && !testCompleted && (
@@ -362,21 +348,19 @@ const TypingTestUI = () => {
             Time's up! Processing results...
           </div>
         )}
-        <div className="flex gap-4 mt-4">
-          {testCompleted && isCalculating && (
-            <div className="text-center text-lg animate-pulse mb-7">
-              Calculating result .....
-            </div>
-          )}
+        {testCompleted && isCalculating && (
+          <div className="text-center text-lg animate-pulse mt-4 mb-7">
+            Calculating result...
+          </div>
+        )}
+        <div ref={keyboardRef}>
+          <Keyboard activeKey={activeKey} layout={lang === 'en' ? 'english' : 'myanmar'} />
         </div>
-        <Keyboard activeKey={activeKey} layout={language} />
         <div className="mt-4">
           <NavLink
             to="/"
             className={({ isActive }) =>
-              isActive
-                ? 'text-white'
-                : 'text-gray-400 hover:text-white transition'
+              isActive ? 'text-white' : 'text-gray-400 hover:text-white transition'
             }
             title="Back to Home"
           >

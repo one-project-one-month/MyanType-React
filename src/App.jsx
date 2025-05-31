@@ -15,11 +15,13 @@ import Leaderboard from "@/pages/Leaderboard.jsx";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import { AuthProvider } from './context/AuthProvider.jsx';
 import { TypingTestProvider } from './context/TypingTestContext.jsx';
+import { DataProvider } from './context/DataProvider.jsx';
 const queryClient = new QueryClient();
 
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
+            <DataProvider>
         <TypingTestProvider>
             <AuthProvider>
             <SettingsProvider>
@@ -44,6 +46,7 @@ function App() {
             </SettingsProvider>
             </AuthProvider>
             </TypingTestProvider>
+            </DataProvider>
         </QueryClientProvider>
     );
 }
