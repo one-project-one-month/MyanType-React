@@ -64,7 +64,7 @@ const TestModeSelector = ({ mode, setMode, option, setOption, language, setLangu
 
             {/* Mode Buttons */}
             <div className="flex flex-row gap-2">
-                {['time', 'words', 'quote', 'custom'].map((m) => (
+                {['words', 'time', 'quote', 'custom'].map((m) => (
                     <Button
                         key={m}
                         onClick={() => handleModeChange(m)}

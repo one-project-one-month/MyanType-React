@@ -1,9 +1,20 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Keyboard, Trophy, Info, User, LogOut } from 'lucide-react';
+import { Home, Keyboard, Trophy, User, LogOut } from 'lucide-react';
+import { AuthContext } from '../context/AuthProvider';
 
-const Navbar = ({ isLoggedIn, logout }) => {
+const Navbar = () => {
+  const { isLoggedIn, logout } = useContext(AuthContext); // Use context
+
+  const handleLogout = async () => {
+    try {
+      await logout(); // Await async logout from context
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
   return (
     <>
       <nav className="py-4 text-center">
@@ -68,9 +79,10 @@ const Navbar = ({ isLoggedIn, logout }) => {
       <div className="absolute top-0 right-0 p-6">
         {isLoggedIn ? (
           <button
-            onClick={logout}
-            className="text-gray-500 hover:text-white transition"
+            onClick={handleLogout}
+            className="text-gray-400 hover:text-white transition"
             title="Logout"
+            aria-label="Log out"
           >
             <LogOut size={24} />
           </button>

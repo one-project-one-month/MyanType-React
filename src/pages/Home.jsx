@@ -1,16 +1,13 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
 import { Button } from '@/components/ui/button';
-import { AuthContext } from '../context/AuthProvider';
 import Navbar from '../components/NavBar';
 
 const Homepage = () => {
-  const { isLoggedIn, logout } = useContext(AuthContext);
-
   return (
     <div className="min-h-screen p-4 text-white flex flex-col">
-      <Navbar isLoggedIn={isLoggedIn} logout={logout} />
+      <Navbar />
       <div className="flex flex-col items-center justify-center flex-grow">
         <h1 className="text-5xl font-bold mb-4">Myan-Type</h1>
         <div className="text-lg text-gray-400 mb-6">
