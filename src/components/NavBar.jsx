@@ -41,17 +41,6 @@ const Navbar = ({ isLoggedIn, logout }) => {
           >
             <Trophy size={24} />
           </NavLink>
-          <NavLink
-            to="/about"
-            className={({ isActive }) =>
-              isActive
-                ? 'text-white'
-                : 'text-gray-400 hover:text-white transition'
-            }
-            title="About"
-          >
-            <Info size={24} />
-          </NavLink>
           {isLoggedIn ? (
             <NavLink
               to="/profile"
