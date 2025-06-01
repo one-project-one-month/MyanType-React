@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
-const TimerComponent = ({ isTyping, startTime, timeLimit, testCompleted }) => {
+const TimerComponent = ({ isTyping, startTime, timeLimit, testCompleted, mode }) => {
   const [timeLeft, setTimeLeft] = useState(timeLimit);
 
+  // Reset timeLeft when mode changes to 'time' or timeLimit changes
+  useEffect(() => {
+    if (mode === 'time') {
+      setTimeLeft(timeLimit);
+    }
+  }, [mode, timeLimit]);
+
+  // Handle timer countdown when typing starts
   useEffect(() => {
     if (!isTyping || !startTime || testCompleted) {
       setTimeLeft(timeLimit);

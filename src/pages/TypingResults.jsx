@@ -5,15 +5,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw, TrendingUp, Target, Clock, Hash } from "lucide-react";
 import ResultsChart from "../components/ResultChart";
 import { useTypingTest } from '../context/TypingTestContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom'; // Add useLocation
 import { Home, Keyboard, Trophy, Info, User, LogOut } from 'lucide-react';
 
 const TypingResults = ({ onRestart }) => {
   const { results } = useTypingTest();
+  const location = useLocation(); // Get navigation state
   const [apiStatus, setApiStatus] = useState({ loading: false, message: '', error: false });
-  
-  // Get the latest result from context
-  const result = results.length > 0 ? results[results.length - 1] : null;
+
+  // Get the latest result from context, or fall back to navigation state
+  const result = results.length > 0 ? results[results.length - 1] : location.state?.result || null;
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -31,24 +32,22 @@ const TypingResults = ({ onRestart }) => {
     return { grade: 'D', color: 'text-red-400' };
   };
 
-  // Transform result to match API schema
   const transformResultForAPI = (result) => {
     if (!result) return null;
 
-    // Calculate consistency (already done in TypingTestUI, but ensure it's available)
     const consistency = result.intervals.length > 1 
       ? Math.round(100 - (Math.max(...result.intervals.map(i => i.wpm)) - Math.min(...result.intervals.map(i => i.wpm))))
       : 100;
 
     return {
       wpm: result.wpm,
-      raw: result.wpm, // Assuming raw WPM is the same as WPM for now
+      raw: result.wpm,
       accuracy: result.accuracy,
       charactersTyped: result.totalChars,
       correct: result.correctChars,
       incorrect: result.incorrectChars,
-      extra: result.extra || 0, // Fallback to 0 if not available
-      miss: result.miss || 0, // Fallback to 0 if not available
+      extra: result.extra || 0,
+      miss: result.miss || 0,
       consistency: consistency,
       timeTaken: result.duration,
       language: result.language,
@@ -57,12 +56,10 @@ const TypingResults = ({ onRestart }) => {
     };
   };
 
-  // Send results to API endpoint with retry logic
   useEffect(() => {
     const sendResultsToAPI = async (retryCount = 3, delay = 2000) => {
       if (!result) return;
 
-      // Skip sending data if mode is "custom"
       if (result.mode.type.toLowerCase() === 'custom') {
         setApiStatus({ loading: false, message: 'Custom mode results are not saved to the server.', error: false });
         return;
@@ -79,8 +76,6 @@ const TypingResults = ({ onRestart }) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              // Uncomment and add your API token if required
-              // 'Authorization': 'Bearer YOUR_API_TOKEN',
             },
             body: JSON.stringify(transformedResult),
           });
@@ -97,14 +92,13 @@ const TypingResults = ({ onRestart }) => {
             response: data,
             timestamp: new Date().toISOString(),
           });
-          return; // Exit on success
+          return;
         } catch (error) {
           console.error('Error on attempt', attempt, ':', error.message);
           if (attempt === retryCount) {
             setApiStatus({ loading: false, message: 'Failed to save results after retries.', error: true });
             return;
           }
-          // Wait before retrying
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -113,7 +107,6 @@ const TypingResults = ({ onRestart }) => {
     sendResultsToAPI();
   }, [result]);
 
-  // If no result is available, show a fallback UI
   if (!result) {
     return (
       <div className="max-w-4xl mx-auto text-center py-8 bg-[#0E0F15] border border-white">
@@ -140,7 +133,6 @@ const TypingResults = ({ onRestart }) => {
         </p>
       </div>
 
-      {/* API Status Message */}
       {apiStatus.message && (
         <div className={`text-center mb-4 ${apiStatus.error ? 'text-red-400' : 'text-green-400'}`}>
           {apiStatus.loading ? (
@@ -151,7 +143,6 @@ const TypingResults = ({ onRestart }) => {
         </div>
       )}
 
-      {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card className="bg-[#0E0F15] border border-white">
           <CardHeader className="text-center pb-2">
@@ -196,7 +187,6 @@ const TypingResults = ({ onRestart }) => {
         </Card>
       </div>
 
-      {/* Detailed Analysis */}
       <Tabs defaultValue="chart" className="mb-8">
         <TabsList className="grid w-full grid-cols-2 bg-[#0E0F15] border border-white">
           <TabsTrigger className="text-gray-500" value="chart">Performance Chart</TabsTrigger>
@@ -287,7 +277,6 @@ const TypingResults = ({ onRestart }) => {
         </TabsContent>
       </Tabs>
 
-      {/* Action Buttons */}
       <div className="flex justify-center space-x-4">
         <Button asChild className="flex items-center space-x-2">
           <Link to="/test">
