@@ -1,7 +1,7 @@
 import {createColumnHelper, getCoreRowModel, getPaginationRowModel, useReactTable} from "@tanstack/react-table";
 import { Trophy } from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
-import axios from "@/lib/axios.js";
+import api from "@/api/axiosConfig.js";
 
 const columnHelper = createColumnHelper();
 const columns = [
@@ -55,11 +55,11 @@ export function useLeaderboard(mode, language) {
     const { data = [], isLoading, isError } = useQuery({
         queryKey: ['leaderboard', lang, mode],
         queryFn: async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const res = await axios.get(`/leaderboard/${lang}/${mode}`);
+            const res = await api.get(`/leaderboard/${lang}/${mode}`);
             return res.data.data;
         },
-        staleTime: 60 * 1000,
+        refetchInterval: 3000,
+        refetchOnWindowFocus: true,
     });
 
     const table = useReactTable({

@@ -15,9 +15,9 @@ export default function Profile() {
             </div>
             {isLoading ? (
                 <Loader2 className="mx-auto h-14 w-14 my-16 animate-spin text-slate-500" />
-            ) : /*isError ? (
+            ) : isError ? (
                 <p className={'text-lg text-red-500 py-6'}>Failed to load data. Please try again.</p>
-            ) :*/ (
+            ) : (
                 <div>
                     <Table table={table} />
                 </div>

@@ -1,22 +1,13 @@
 import {useQuery} from "@tanstack/react-query";
-import axios from "@/lib/axios.js";
 import {createColumnHelper, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {Trophy} from "lucide-react";
+import api from "@/api/axiosConfig.js";
 
 const columnHelper = createColumnHelper();
 const columns = [
-    columnHelper.display( {
-        id: 'crown',
-        cell: info => {
-            const row = info.row.original;
-            const isTop = row.isTop;
-            return (
-                <span className="flex justify-end">
-                    {isTop ? <Trophy className="h-5 w-5 text-yellow-400" /> : "-"}
-                </span>
-            )
-        },
-        header: '#',
+    columnHelper.accessor('#', {
+       header: '#',
+       cell: info => <span>-</span>
     }),
     columnHelper.accessor('wpm', { header: 'Wpm' }),
     columnHelper.accessor('accuracy', { header: 'Accuracy', cell: info => `${info.getValue()}%` }),
@@ -39,7 +30,7 @@ const columns = [
             const { timeLimit, wordLimit, mode } = info.row.original;
             return (
                 <span>
-                    {mode.toLocaleLowerCase()} {mode === 'Time' ? timeLimit : wordLimit}
+                    {mode.toLocaleLowerCase()} {mode === 'TIME' ? timeLimit : wordLimit}
                 </span>
             )
         }
@@ -57,22 +48,8 @@ export default function useHistory() {
     const { data = [], isLoading, isError } = useQuery({
         queryKey: ['history'],
         queryFn: async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const res = await axios.get('/me');
-            const rows = res.data.data || {};
-
-            const maxWpmByMode = {};
-            rows.forEach(r => {
-                const key = r.timeLimit;
-                if (!maxWpmByMode[key] || r.wpm > maxWpmByMode[key]) {
-                    maxWpmByMode[key] = r.wpm;
-                }
-            });
-
-            return rows.map(r => ({
-                ...r,
-                isTop: r.wpm === maxWpmByMode[r.timeLimit],
-            }));
+            const res = await api.get('/me');
+            return res.data.data;
         },
         staleTime: 60 * 1000,
     })
