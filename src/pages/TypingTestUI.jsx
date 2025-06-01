@@ -7,13 +7,13 @@ import ResetButton from '../components/ResetButton';
 import MetricsDisplay from '../components/MetricsDisplay';
 import TimerComponent from '../components/TimerComponent';
 import { useData } from '../context/DataProvider';
-import { useTypingTest } from '../context/TypingTestContext'; // Import the context
+import { useTypingTest } from '../context/TypingTestContext';
 import { v4 as uuidv4 } from 'uuid';
 import { Home } from 'lucide-react';
 
 const TypingTestUI = () => {
   const { words, quote, timeData, loading, error, lang, mode, option, setLang, setMode, setOption, reloadData } = useData();
-  const { addResult, addWpmPoint } = useTypingTest(); // Use context functions
+  const { addResult, addWpmPoint } = useTypingTest();
   const navigate = useNavigate();
   const [currentText, setCurrentText] = useState('');
   const [userInput, setUserInput] = useState('');
@@ -26,10 +26,6 @@ const TypingTestUI = () => {
   const typingAreaRef = useRef(null);
   const keyboardRef = useRef(null);
 
-  // Remove local wpmHistory array since it's managed by context
-  // const wpmHistory = [];
-
-  // Reset typing states when mode changes
   useEffect(() => {
     setUserInput('');
     setIsTyping(false);
@@ -42,7 +38,6 @@ const TypingTestUI = () => {
     }
   }, [mode]);
 
-  // Scroll to Keyboard when typing starts
   useEffect(() => {
     if (isTyping && keyboardRef.current) {
       keyboardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -51,7 +46,7 @@ const TypingTestUI = () => {
 
   const isTextCompleted = (input, text, mode) => {
     if (mode === 'quote') {
-      return input.length >= text.length && input === text;
+      return input.length === text.length; // Modified to only check length
     } else if (mode === 'words') {
       return input.length >= text.length;
     }
@@ -156,7 +151,7 @@ const TypingTestUI = () => {
               ...prev,
               { wpm, accuracy, timestamp: timeElapsed },
             ]);
-            addWpmPoint(timeElapsed, wpm, mode); // Use context function
+            addWpmPoint(timeElapsed, wpm, mode);
           }
         }
 
@@ -186,14 +181,14 @@ const TypingTestUI = () => {
               accuracy: interval.accuracy,
             })),
             createdAt: new Date().toISOString(),
-            timePerChar: { data: [] }, // wpmHistory is now managed by context
+            timePerChar: { data: [] },
           };
-          addResult(result); // Use context function to add result
+          addResult(result);
           setTestCompleted(true);
           setIsCalculating(true);
           setTimeout(() => {
             setIsCalculating(false);
-            navigate('/results', { state: { result } }); // Pass result as state (optional)
+            navigate('/results', { state: { result } });
           }, 2000);
           clearInterval(interval);
         }
@@ -234,14 +229,14 @@ const TypingTestUI = () => {
             accuracy: interval.accuracy,
           })),
           createdAt: new Date().toISOString(),
-          timePerChar: { data: [] }, // wpmHistory is now managed by context
+          timePerChar: { data: [] },
         };
-        addResult(result); // Use context function to add result
+        addResult(result);
         setTestCompleted(true);
         setIsCalculating(true);
         setTimeout(() => {
           setIsCalculating(false);
-          navigate('/results', { state: { result } }); // Pass result as state (optional)
+          navigate('/results', { state: { result } });
         }, 2000);
       }
       return;
