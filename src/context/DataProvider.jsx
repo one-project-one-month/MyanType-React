@@ -1,9 +1,12 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { useLocation } from 'react-router-dom'; // Import useLocation
 import { fetchWords, fetchQuote, fetchTimeWords } from '../api/axiosConfig';
 
 const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
+  const location = useLocation(); // Hook to access URL information
+  // Initialize state with defaults
   const [words, setWords] = useState('');
   const [quote, setQuote] = useState('');
   const [timeData, setTimeData] = useState('');
@@ -12,6 +15,25 @@ export const DataProvider = ({ children }) => {
   const [lang, setLang] = useState('en');
   const [mode, setMode] = useState('words');
   const [option, setOption] = useState(15);
+
+  // Parse URL query parameters on mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const urlLang = searchParams.get('lang');
+    const urlTime = searchParams.get('time');
+    const urlPath = location.pathname.split('/')[1]; // Get the first segment of the path (e.g., 'time', 'words', 'quote')
+
+    // Update state based on URL
+    if (urlPath && ['words', 'quote', 'time', 'custom'].includes(urlPath)) {
+      setMode(urlPath);
+    }
+    if (urlLang && ['en', 'mm'].includes(urlLang)) {
+      setLang(urlLang);
+    }
+    if (urlTime && !isNaN(parseInt(urlTime))) {
+      setOption(parseInt(urlTime));
+    }
+  }, [location]); // Run once on mount
 
   const loadData = async () => {
     setLoading(true);
@@ -47,7 +69,6 @@ export const DataProvider = ({ children }) => {
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang, mode, option]);
 
   return (
@@ -64,7 +85,7 @@ export const DataProvider = ({ children }) => {
         setLang,
         setMode,
         setOption,
-        reloadData: loadData, // Expose the reload function
+        reloadData: loadData,
       }}
     >
       {children}
