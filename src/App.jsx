@@ -4,7 +4,6 @@ import { TestProvider } from './context/TestContextProvider.jsx';
 import { SettingsProvider } from './context/SettingProvider.jsx';
 import "./App.css";
 import { Toaster } from 'sonner';
-import RootLayout from "./layout/RootLayout";
 import Login from "./pages/auth/Login.jsx";
 import Register from "./pages/auth/Register.jsx";
 import HomePage from './pages/Home.jsx';
@@ -29,19 +28,26 @@ function App() {
                             <SettingsProvider>
                                 <UserStatProvider>
                                     <TestProvider>
-                                        <Routes>
-                                            <Route path="/" element={<RootLayout/>}>
-                                                <Route index element={<HomePage/>}/>
+                                        {/* Add the section wrapper from RootLayout */}
+                                        <section className="mx-auto max-w-6xl my-2">
+                                            {/* Use Toaster settings from RootLayout */}
+                                            <Toaster
+                                                position="top-center"
+                                                closeButton
+                                                richColors
+                                                duration={3000}
+                                                expand={true}
+                                            />
+                                            <Routes>
+                                                <Route path="/" element={<HomePage/>}/>
                                                 <Route path="sign-up" element={<Register/>}/>
                                                 <Route path="login" element={<Login/>}/>
                                                 <Route path="results" element={<TypingResults/>}/>
-                                                {/* Update to handle dynamic modes */}
                                                 <Route path=":mode" element={<TypingTestUI/>}/>
                                                 <Route path="leaderboard" element={<Leaderboard/>}/>
                                                 <Route path="profile" element={<Profile/>}/>
-                                            </Route>
-                                        </Routes>
-                                        <Toaster richColors position="bottom-center" />
+                                            </Routes>
+                                        </section>
                                     </TestProvider>
                                 </UserStatProvider>
                             </SettingsProvider>
