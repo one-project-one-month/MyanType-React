@@ -6,7 +6,7 @@ import useResult from "../../../../hooks/useResult.jsx";
 export default function TypingOverview() {
     const { data } = useResult();
 
-    const stats = data?.stats;
+    const stats = data;
 
     const typingOverview = [
         {

@@ -11,12 +11,11 @@ import TypingResults from './pages/TypingResults.jsx';
 import TypingTestUI from './pages/TypingTestUI.jsx';
 import Profile from "@/pages/Profile.jsx";
 import Leaderboard from "@/pages/Leaderboard.jsx";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from './context/AuthProvider.jsx';
 import { TypingTestProvider } from './context/TypingTestContext.jsx';
 import { DataProvider } from './context/DataProvider.jsx';
-
-const queryClient = new QueryClient();
+import {QueryClientProvider} from "@tanstack/react-query";
+import {queryClient} from "@/lib/queryClient.js";
 
 function App() {
     return (
@@ -29,7 +28,7 @@ function App() {
                                 <UserStatProvider>
                                     <TestProvider>
                                         {/* Add the section wrapper from RootLayout */}
-                                        <section className="mx-auto max-w-6xl my-2">
+                                        <section className="mx-auto max-w-7xl my-2">
                                             {/* Use Toaster settings from RootLayout */}
                                             <Toaster
                                                 position="top-center"

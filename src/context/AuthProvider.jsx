@@ -1,5 +1,6 @@
 // src/context/AuthProvider.jsx
 import React, { createContext, useState, useEffect } from 'react';
+import {queryClient} from "@/lib/queryClient.js";
 
 export const AuthContext = createContext();
 
@@ -15,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    queryClient.clear();
     setIsLoggedIn(false);
     localStorage.removeItem('isLoggedIn');
   };

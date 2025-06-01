@@ -5,9 +5,9 @@ import dayjs from "dayjs";
 export default function ProfileHeader() {
     const { data } = useResult();
 
-    const username = data?.stats?.user?.username || 'Unknown User';
+    const username = data?.user?.username;
     const joinDateRaw = data?.user?.createdAt;
-    const joinDate = joinDateRaw ? dayjs(joinDateRaw).format('MMM D, YYYY') : 'Unknown';
+    const joinDate = dayjs(joinDateRaw).format('MMM D, YYYY');
     return (
         <div className={'flex flex-col gap-2 text-white tracking-wider items-center sm:items-start text-center sm:text-left'}>
             <img
