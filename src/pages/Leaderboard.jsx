@@ -1,4 +1,3 @@
-
 import {useState} from "react";
 import {Loader2} from "lucide-react";
 import CountdownWithPagination from "@/components/leaderboard/CountdownWithPagination.jsx";
