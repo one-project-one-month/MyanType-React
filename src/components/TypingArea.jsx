@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const TypingArea = ({ currentText, userInput, onUserInput }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const wordsPerPage = 50; // Number of words per page
+  const wordsPerPage = 38; // Number of words per page
+  const autoAdvanceThreshold = 1; // Advance when 90% of the page is typed
 
   // Split the currentText into words
   const words = currentText ? currentText.split(' ') : [];
@@ -30,6 +31,19 @@ const TypingArea = ({ currentText, userInput, onUserInput }) => {
       setCurrentPage(currentPage + 1);
     }
   };
+
+  // Auto-advance to the next page based on typing progress
+  useEffect(() => {
+    if (currentPage < totalPages) {
+      const typedCharsOnPage = userInput.slice(charStartIndex, charEndIndex).length;
+      const pageLength = currentPageWords.length;
+      const progress = typedCharsOnPage / pageLength;
+
+      if (progress >= autoAdvanceThreshold) {
+        setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+      }
+    }
+  }, [userInput, currentPage, totalPages, charStartIndex, charEndIndex, currentPageWords, autoAdvanceThreshold]);
 
   return (
     <div className="w-11/12 max-w-4xl mb-6"> {/* Increased width */}
@@ -91,31 +105,6 @@ const TypingArea = ({ currentText, userInput, onUserInput }) => {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex justify-between mt-2">
-          <button
-            onClick={goToPreviousPage}
-            disabled={currentPage === 1}
-            className={`px-4 py-2 text-sm font-medium text-white rounded ${
-              currentPage === 1
-                ? 'bg-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            Previous
-          </button>
-          <span className="text-gray-400">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={goToNextPage}
-            disabled={currentPage === totalPages}
-            className={`px-4 py-2 text-sm font-medium text-white rounded ${
-              currentPage === totalPages
-                ? 'bg-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            Next
-          </button>
         </div>
       )}
     </div>
