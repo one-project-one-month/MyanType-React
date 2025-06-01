@@ -1,48 +1,29 @@
-// src/context/AuthProvider.jsx
-import React, { createContext, useState, useEffect } from 'react';
-import {queryClient} from "@/lib/queryClient.js";
+import React, { createContext, useState } from 'react';
+import { queryClient } from "@/lib/queryClient.js";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    // Initialize from localStorage to persist login state
-    return localStorage.getItem('isLoggedIn') === 'true';
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const login = () => {
     setIsLoggedIn(true);
-    localStorage.setItem('isLoggedIn', 'true');
   };
 
-  const logout = () => {
-    queryClient.clear();
-    setIsLoggedIn(false);
-    localStorage.removeItem('isLoggedIn');
+  const logout = async () => {
+    try {
+      await fetch('https://myantype-nodejs.onrender.com/api/v1/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      queryClient.clear();
+      setIsLoggedIn(false);
+    } catch (error) {
+      console.error('Logout failed:', error);
+      queryClient.clear();
+      setIsLoggedIn(false);
+    }
   };
-
-  // Optional: Add token validation if using JWT
-  useEffect(() => {
-    // Example: Validate token with API (uncomment and adapt if needed)
-    /*
-    const validateToken = async () => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        try {
-          const { data } = await authApi.get('/auth/verify');
-          if (data.isValid) {
-            setIsLoggedIn(true);
-          } else {
-            logout();
-          }
-        } catch (error) {
-          logout();
-        }
-      }
-    };
-    validateToken();
-    */
-  }, []);
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, login, logout }}>
