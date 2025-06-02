@@ -28,7 +28,7 @@ const Homepage = () => {
             sequence={[
               'const mastery = (speed, accuracy) => speed * accuracy ! ',
               2000,
-              'ကီးဘုတ်ပေါ် က ချစ်ခြင်း နဲ့ ပြိုင်ဆိုင်မှု !',
+              'This isn’t just a typing test. It’s a lifestyle .... ',
               2000,
               '',
               500,
