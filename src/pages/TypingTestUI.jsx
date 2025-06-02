@@ -8,7 +8,6 @@ import MetricsDisplay from '../components/MetricsDisplay';
 import TimerComponent from '../components/TimerComponent';
 import { useData } from '../context/DataProvider';
 import { useTypingTest } from '../context/TypingTestContext';
-import { v4 as uuidv4 } from 'uuid';
 import { Home } from 'lucide-react';
 
 const TypingTestUI = () => {
@@ -46,7 +45,7 @@ const TypingTestUI = () => {
 
   const isTextCompleted = (input, text, mode) => {
     if (mode === 'quote') {
-      return input.length === text.length; // Modified to only check length
+      return input.length === text.length;
     } else if (mode === 'words') {
       return input.length >= text.length;
     }
@@ -164,10 +163,8 @@ const TypingTestUI = () => {
         if (shouldComplete) {
           const elapsedTime = elapsedSeconds;
           const result = {
-            id: uuidv4(),
-            userID: '910ffb6d-360c-4226-8640-ffe6af726732',
-            mode: { type: mode.toUpperCase(), value: option },
-            language: lang === 'en' ? 'english' : 'myanmar',
+            mode: { type: mode.toLowerCase(), value: option },
+            language: lang === 'en' ? 'en' : 'mm',
             wpm: calculateMetrics.wpm,
             accuracy: calculateMetrics.accuracy,
             duration: elapsedTime,
@@ -212,10 +209,8 @@ const TypingTestUI = () => {
       if (userInput.trim().length > 0) {
         const elapsedSeconds = startTime ? (Date.now() - startTime) / 1000 : 0;
         const result = {
-          id: uuidv4(),
-          userID: '910ffb6d-360c-4226-8640-ffe6af726732',
-          mode: { type: 'CUSTOM', value: null },
-          language: lang === 'en' ? 'english' : 'myanmar',
+          mode: { type: 'custom', value: null },
+          language: lang === 'en' ? 'en' : 'mm',
           wpm: calculateMetrics.wpm,
           accuracy: 100,
           duration: elapsedSeconds,
