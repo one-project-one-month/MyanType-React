@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RotateCcw, TrendingUp, Target, Clock, Hash, Home } from "lucide-react";
 import ResultsChart from "../components/ResultChart";
 import { useTypingTest } from '../context/TypingTestContext';
@@ -15,6 +15,13 @@ const TypingResults = ({ onRestart }) => {
   const [apiStatus, setApiStatus] = useState({ loading: false, message: '', error: false });
 
   const result = results.length > 0 ? results[results.length - 1] : location.state?.result || null;
+
+  // Log the test mode
+  useEffect(() => {
+    if (result) {
+      console.log('Test Mode:', result.mode?.type || 'Unknown');
+    }
+  }, [result]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -63,7 +70,8 @@ const TypingResults = ({ onRestart }) => {
       timeTaken: Number(result.duration) || 0,
       language: validLanguage,
       mode: validMode,
-      timeLimit: Number(result.mode?.value) || 0,
+      timeLimit: Number(result.mode?.type.toLowerCase() === 'time' ? result.mode?.value : 0),
+      wordLimit: Number(result.mode?.type.toLowerCase() === 'words' ? result.mode?.value : 0),
     };
     console.log('Original result:', result);
     console.log('Transformed for API:', transformedData);
@@ -72,7 +80,7 @@ const TypingResults = ({ onRestart }) => {
   };
 
   useEffect(() => {
-    const sendResultsToAPI = async (retryCount = 3, delay = 2000) => {
+    const sendResultsToAPI = async (retryCount = 1, delay = 2000) => {
       if (!result) {
         setApiStatus({ loading: false, message: 'No result data available.', error: true });
         return;
