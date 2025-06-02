@@ -91,7 +91,7 @@ const TypingResults = ({ onRestart }) => {
     const sendResultsToAPI = async () => {
       hasSentApiRef.current = true; // Mark API call as sent
       if (result.mode.type.toLowerCase() === 'custom') {
-        setApiStatus({ loading: false, message: 'Custom mode results are not saved to the server.', error: false });
+        setApiStatus({ loading: false, message: 'Custom mode results are not saved', error: false });
         return;
       }
 
