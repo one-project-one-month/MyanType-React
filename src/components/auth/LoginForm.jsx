@@ -1,4 +1,3 @@
-// src/components/LoginForm.jsx
 import { useContext } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +21,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { authApi } from "../../api/axiosConfig";
-import { loginFormSchema } from "../../utils/authFormSchema";
 import { AuthContext } from "../../context/AuthProvider";
+import { loginFormSchema } from "../../utils/authFormSchema";
 
 export function LoginForm() {
   const { login } = useContext(AuthContext); // Access login function
@@ -36,16 +34,15 @@ export function LoginForm() {
 
   const onSubmit = async (values) => {
     try {
-      const { data } = await authApi.post("/auth/login", values);
+      const data = await login(values.email, values.password); // Pass form values to login
       if (data.success) {
         toast.success(data.message);
-        login(); // Update auth state
         navigate("/"); // Redirect to TypingTestUI
       } else {
         toast.error("Something went wrong");
       }
     } catch (error) {
-      toast.error("Login failed. Please try again.");
+      toast.error(error.message || "Login failed. Please try again.");
     }
   };
 

@@ -45,7 +45,10 @@ function App() {
                         <Route path="/leaderboard" element={<Leaderboard />} />
                         <Route path="/profile" element={<Profile />} />
                         <Route path="/test" element={<TypingTestUI />} />
-                        <Route path="/test/:mode(words|quote|time|custom)" element={<TypingTestUI />} />
+                        <Route path="/words" element={<TypingTestUI />} />
+                        <Route path="/time" element={<TypingTestUI />} />
+                        <Route path="/quote" element={<TypingTestUI />} />
+                        <Route path="/custom" element={<TypingTestUI />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </section>

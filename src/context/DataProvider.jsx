@@ -5,8 +5,7 @@ import { fetchWords, fetchQuote, fetchTimeWords } from '../api/axiosConfig';
 const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
-  const location = useLocation(); // Hook to access URL information
-  // Initialize state with defaults
+  const location = useLocation(); 
   const [words, setWords] = useState('');
   const [quote, setQuote] = useState('');
   const [timeData, setTimeData] = useState('');
