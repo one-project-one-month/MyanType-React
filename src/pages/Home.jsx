@@ -26,9 +26,9 @@ const Homepage = () => {
         <div className="w-3/4 max-w-2xl bg-[#0e0f15] border border-gray-600 rounded-lg p-4 mb-6 text-lg font-mono text-gray-200 min-h-[60px] flex items-center">
           <TypeAnimation
             sequence={[
-              'the quick brown fox jumps over the lazy dog .... ',
+              'const mastery = (speed, accuracy) => speed * accuracy ! ',
               2000,
-              'ကီးဘုတ်ပေါ် က ချစ်ခြင်း နဲ့ ပြိုင်ဆိုင်မှု !',
+              'This isn’t just a typing test. It’s a lifestyle .... ',
               2000,
               '',
               500,
