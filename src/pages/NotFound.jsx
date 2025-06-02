@@ -6,7 +6,7 @@ const NotFound = () => {
   const messages = [
     "Oops! Page not found...",
     "Looks like you took a wrong turn!",
-    "404: Let's get you back on track!"
+    "Let's get you back on track!"
   ];
 
   const [currentMessage, setCurrentMessage] = useState('');
@@ -22,7 +22,7 @@ const NotFound = () => {
 
     const type = () => {
       const currentText = messages[messageIndex];
-
+    
       if (!isDeleting && charIndex < currentText.length) {
         // Typing
         setCurrentMessage(currentText.substring(0, charIndex + 1));
@@ -31,7 +31,7 @@ const NotFound = () => {
       } else if (isDeleting && charIndex > 0) {
         // Deleting
         setCurrentMessage(currentText.substring(0, charIndex - 1));
-        setActiveKey(currentText[charIndex - 1] || ''); // Set the previous character or empty
+        setActiveKey(''); // ❌ Don't highlight any key during delete
         setCharIndex(charIndex - 1);
       } else if (!isDeleting && charIndex === currentText.length) {
         // Pause at end of typing
@@ -44,6 +44,7 @@ const NotFound = () => {
         setActiveKey(''); // Clear activeKey when switching messages
       }
     };
+    
 
     const timer = setTimeout(type, isDeleting ? deleteSpeed : typeSpeed);
     return () => clearTimeout(timer);
