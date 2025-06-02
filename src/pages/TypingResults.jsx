@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -13,8 +13,12 @@ const TypingResults = ({ onRestart }) => {
   const { isLoggedIn } = useContext(AuthContext);
   const location = useLocation();
   const [apiStatus, setApiStatus] = useState({ loading: false, message: '', error: false });
+  const hasSentApiRef = useRef(false); // Track if API call has been made
 
-  const result = results.length > 0 ? results[results.length - 1] : location.state?.result || null;
+  // Memoize result to prevent unnecessary re-renders
+  const result = useMemo(() => {
+    return results.length > 0 ? results[results.length - 1] : location.state?.result || null;
+  }, [results, location.state?.result]);
 
   // Log the test mode
   useEffect(() => {
@@ -80,12 +84,12 @@ const TypingResults = ({ onRestart }) => {
   };
 
   useEffect(() => {
-    const sendResultsToAPI = async (retryCount = 1, delay = 2000) => {
-      if (!result) {
-        setApiStatus({ loading: false, message: 'No result data available.', error: true });
-        return;
-      }
+    if (!result || hasSentApiRef.current) {
+      return;
+    }
 
+    const sendResultsToAPI = async () => {
+      hasSentApiRef.current = true; // Mark API call as sent
       if (result.mode.type.toLowerCase() === 'custom') {
         setApiStatus({ loading: false, message: 'Custom mode results are not saved to the server.', error: false });
         return;
@@ -101,8 +105,6 @@ const TypingResults = ({ onRestart }) => {
       }
 
       const accessToken = localStorage.getItem('accessToken');
-      console.log('Access token:', accessToken ? accessToken.substring(0, 20) + '...' : 'undefined');
-
       if (!accessToken) {
         setApiStatus({
           loading: false,
@@ -127,90 +129,105 @@ const TypingResults = ({ onRestart }) => {
 
       setApiStatus({ loading: true, message: 'Saving results...', error: false });
 
-      for (let attempt = 1; attempt <= retryCount; attempt++) {
-        try {
-          console.log(`Attempt ${attempt}: Sending data to API...`);
-          const response = await fetch('https://myantype-nodejs.onrender.com/api/v1/result', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-            },
-            credentials: 'include', // Send HttpOnly cookies
-            body: JSON.stringify(transformedResult),
-          });
+      try {
+        console.log('Sending data to API...');
+        const response = await fetch('https://myantype-nodejs.onrender.com/api/v1/result', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          credentials: 'include',
+          body: JSON.stringify(transformedResult),
+        });
 
-          console.log('API Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries())
-          });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API call failed:', response.status, errorText);
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Attempt ${attempt} failed: ${response.status} ${errorText}`);
+          if (response.status === 401) {
+            console.log('Attempting token refresh...');
+            const refreshResponse = await fetch('https://myantype-nodejs.onrender.com/api/v1/auth/refresh', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+            });
 
-            if (response.status === 401) {
-              console.log('Attempting token refresh...');
-              const refreshResponse = await fetch('https://myantype-nodejs.onrender.com/api/v1/auth/refresh', {
+            if (refreshResponse.ok) {
+              const { accessToken: newAccessToken } = await refreshResponse.json();
+              console.log('New access token:', newAccessToken.substring(0, 20) + '...');
+              localStorage.setItem('accessToken', newAccessToken);
+
+              // Retry API call with new token
+              const retryResponse = await fetch('https://myantype-nodejs.onrender.com/api/v1/result', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${newAccessToken}`,
                 },
-                credentials: 'include', // Send HttpOnly refreshToken cookie
+                credentials: 'include',
+                body: JSON.stringify(transformedResult),
               });
 
-              if (refreshResponse.ok) {
-                const { accessToken: newAccessToken } = await refreshResponse.json();
-                console.log('New access token:', newAccessToken.substring(0, 20) + '...');
-                localStorage.setItem('accessToken', newAccessToken);
-                return sendResultsToAPI(retryCount, delay); // Retry with new token
-              } else {
-                console.error('Token refresh failed:', await refreshResponse.text());
-                setApiStatus({
-                  loading: false,
-                  message: 'Failed to refresh authentication token. Please log in again.',
-                  error: true
-                });
-                return;
+              if (!retryResponse.ok) {
+                throw new Error(`Retry failed: ${await retryResponse.text()}`);
               }
-            }
 
-            if (response.status === 500) {
+              const data = await retryResponse.json();
               setApiStatus({
                 loading: false,
-                message: `Server error: Invalid mode or language. Please ensure mode is 'time', 'words', or 'quote' and language is 'en' or 'mm'.`,
+                message: 'Results saved successfully!',
+                error: false
+              });
+              console.log('Results sent successfully:', {
+                requestBody: transformedResult,
+                response: data,
+                timestamp: new Date().toISOString(),
+              });
+              return;
+            } else {
+              console.error('Token refresh failed:', await refreshResponse.text());
+              setApiStatus({
+                loading: false,
+                message: 'Failed to refresh authentication token. Please log in again.',
                 error: true
               });
               return;
             }
-
-            throw new Error(`Failed to send results (Attempt ${attempt}/${retryCount}): ${errorText}`);
           }
 
-          const data = await response.json();
-          setApiStatus({
-            loading: false,
-            message: 'Results saved successfully!',
-            error: false
-          });
-          console.log('Results sent successfully:', {
-            requestBody: transformedResult,
-            response: data,
-            timestamp: new Date().toISOString(),
-          });
-          return;
-        } catch (error) {
-          console.error(`Attempt ${attempt} error:`, error.message);
-          if (attempt === retryCount) {
+          if (response.status === 500) {
             setApiStatus({
               loading: false,
-              message: 'Failed to save results after retries. Please try again.',
+              message: `Server error: Invalid mode or language. Please ensure mode is 'time', 'words', or 'quote' and language is 'en' or 'mm'.`,
               error: true
             });
+            return;
           }
-          await new Promise(resolve => setTimeout(resolve, delay));
+
+          throw new Error(`Failed to send results: ${errorText}`);
         }
+
+        const data = await response.json();
+        setApiStatus({
+          loading: false,
+          message: 'Results saved successfully!',
+          error: false
+        });
+        console.log('Results sent successfully:', {
+          requestBody: transformedResult,
+          response: data,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error('API call error:', error.message);
+        setApiStatus({
+          loading: false,
+          message: 'Failed to save results. Please try again.',
+          error: true
+        });
       }
     };
 
