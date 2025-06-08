@@ -10,6 +10,7 @@ import HomePage from './pages/Home.jsx';
 import TypingResults from './pages/TypingResults.jsx';
 import TypingTestUI from './pages/TypingTestUI.jsx';
 import Profile from '@/pages/Profile.jsx';
+import About from './pages/About.jsx';
 import Leaderboard from '@/pages/Leaderboard.jsx';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthProvider.jsx';
@@ -49,6 +50,7 @@ function App() {
                         <Route path="/time" element={<TypingTestUI />} />
                         <Route path="/quote" element={<TypingTestUI />} />
                         <Route path="/custom" element={<TypingTestUI />} />
+                        <Route path="/about" element={<About />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </section>
