@@ -1,12 +1,32 @@
-# React + Vite
+# 🐵 Myan-Type
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Myan-Type** is a modern, minimalistic typing test web app built with [React](https://react.dev/) and [shadcn/ui](https://ui.shadcn.com/), designed to support both **Myanmar** and **English** typing. Inspired by [Monkeytype](https://monkeytype.com/), it offers an intuitive and customizable typing experience.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🌐 **Multi-language support** — Test your typing in both **Myanmar** and **English**.
+- 🧪 **Multiple test modes** — Choose from various typing modes to match your style and goal.
+- 🎨 **Modern UI** — Built with `shadcn/ui` for a clean, responsive, and accessible interface.
+- ⚙️ **Context API** — Efficient global state management for user preferences, test configurations, and more.
+- 📈 **Real-time stats** — Track your speed, accuracy, and progress dynamically.
+- 📊 **Performance breakdown** — Get detailed feedback after each test.
+- 👥 **User Profiles** — Save stats and progress.
 
-## Expanding the ESLint configuration
+## 🌱 Planned Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- 🥇 **Competition Mode (Coming Soon)** — Challenge friends or the community in real-time typing contests.
+- 📱 **Mobile Optimization** — Fully responsive for better experience on phones and tablets.
+
+## 📦 Tech Stack
+
+- **Frontend**: React (with Vite)
+- **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
+- **State Management**: React Context API
+- **Backend**: Node.js + Mysql
+
+## 🛠️ Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/myan-type.git
+   cd myan-type
