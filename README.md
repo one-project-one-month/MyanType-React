@@ -22,7 +22,7 @@
 - **Frontend**: React (with Vite)
 - **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
 - **State Management**: React Context API
-- **Backend**: Node.js + Mysql
+- **Backend**: Node.js (express) + Mysql
 
 ## 🛠️ Installation
 
