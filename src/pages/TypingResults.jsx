@@ -131,7 +131,7 @@ const TypingResults = ({ onRestart }) => {
 
       try {
         console.log('Sending data to API...');
-        const response = await fetch('http://localhost:3000/api/v1/result', {
+        const response = await fetch('http://150.95.85.40:4000/api/v1/result', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ const TypingResults = ({ onRestart }) => {
 
           if (response.status === 401) {
             console.log('Attempting token refresh...');
-            const refreshResponse = await fetch('http://localhost:3000/api/v1/auth/refresh', {
+            const refreshResponse = await fetch('http://150.95.85.40:4000/api/v1/auth/refresh', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ const TypingResults = ({ onRestart }) => {
               localStorage.setItem('accessToken', newAccessToken);
 
               // Retry API call with new token
-              const retryResponse = await fetch('http://localhost:3000/api/v1/result', {
+              const retryResponse = await fetch('http://150.95.85.40:4000/api/v1/result', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

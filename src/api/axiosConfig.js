@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { toast } from 'sonner';
 
-export const BASE_URL = 'http://localhost:3000/api/v1';
+export const BASE_URL = 'http://150.95.85.40:4000/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
