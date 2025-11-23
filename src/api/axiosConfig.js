@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { toast } from 'sonner';
 
-export const BASE_URL = 'https://myantype-nodejs.onrender.com/api/v1';
+export const BASE_URL = 'http://localhost:3000/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,

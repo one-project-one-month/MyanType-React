@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
-const BASE_URL = 'https://myantype-nodejs.onrender.com/api/v1';
+const BASE_URL = 'http://localhost:3000/api/v1';
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
