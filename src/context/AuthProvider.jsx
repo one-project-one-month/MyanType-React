@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
-const BASE_URL = 'http://150.95.85.40:4000/api/v1';
+const BASE_URL = 'https://myan-type.kyawmgmglwin.site:4000/api/v1';
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
